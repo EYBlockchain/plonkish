@@ -2,10 +2,7 @@ use crate::{
     pcs::{
         univariate::{
             additive, err_too_large_deree,
-            ipa::{
-                UnivariateIpa, UnivariateIpaCommitment, UnivariateIpaParam,
-                UnivariateIpaVerifierParam,
-            },
+            ipa::{UnivariateIpa, UnivariateIpaCommitment, UnivariateIpaParam},
             validate_input,
         },
         Additive, Evaluation, Point, PolynomialCommitmentScheme,
@@ -66,34 +63,8 @@ impl<C: CurveAffine> UnivariateHyraxParam<C> {
         self.ipa.monomial()
     }
 
-    pub fn lagrange(&self) -> &[C] {
-        self.ipa.lagrange()
-    }
-
     pub fn h(&self) -> &C {
         self.ipa.h()
-    }
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct UnivariateHyraxVerifierParam<C: CurveAffine> {
-    k: usize,
-    batch_k: usize,
-    row_k: usize,
-    ipa: UnivariateIpaVerifierParam<C>,
-}
-
-impl<C: CurveAffine> UnivariateHyraxVerifierParam<C> {
-    pub fn k(&self) -> usize {
-        self.k
-    }
-
-    pub fn row_k(&self) -> usize {
-        self.row_k
-    }
-
-    pub fn num_chunks(&self) -> usize {
-        1 << (self.k - self.row_k)
     }
 }
 
@@ -146,7 +117,7 @@ where
 {
     type Param = UnivariateHyraxParam<C>;
     type ProverParam = UnivariateHyraxParam<C>;
-    type VerifierParam = UnivariateHyraxVerifierParam<C>;
+    type VerifierParam = UnivariateHyraxParam<C>;
     type Polynomial = UnivariatePolynomial<C::Scalar>;
     type Commitment = UnivariateHyraxCommitment<C>;
     type CommitmentChunk = C;
@@ -203,12 +174,11 @@ where
     }
 
     fn commit(pp: &Self::ProverParam, poly: &Self::Polynomial) -> Result<Self::Commitment, Error> {
+        assert_eq!(poly.basis(), Monomial);
+
         validate_input("commit", pp.degree(), [poly])?;
 
-        let bases = match poly.basis() {
-            Monomial => pp.monomial(),
-            Lagrange => pp.lagrange(),
-        };
+        let bases = pp.monomial();
 
         let row_len = pp.row_len();
         let scalars = poly.coeffs();
@@ -386,17 +356,20 @@ mod test {
         },
         util::transcript::Keccak256Transcript,
     };
-    use halo2_curves::pasta::pallas::Affine;
+    use halo2_curves::{grumpkin, pasta::pallas::Affine};
 
-    type Pcs = UnivariateHyrax<Affine>;
+    type PastaPcs = UnivariateHyrax<Affine>;
+    type GrumpkinPcs = UnivariateHyrax<grumpkin::G1Affine>;
 
     #[test]
     fn commit_open_verify() {
-        run_commit_open_verify::<_, Pcs, Keccak256Transcript<_>>();
+        run_commit_open_verify::<_, PastaPcs, Keccak256Transcript<_>>();
+        run_commit_open_verify::<_, GrumpkinPcs, Keccak256Transcript<_>>();
     }
 
     #[test]
     fn batch_commit_open_verify() {
-        run_batch_commit_open_verify::<_, Pcs, Keccak256Transcript<_>>();
+        run_batch_commit_open_verify::<_, PastaPcs, Keccak256Transcript<_>>();
+        run_batch_commit_open_verify::<_, GrumpkinPcs, Keccak256Transcript<_>>();
     }
 }

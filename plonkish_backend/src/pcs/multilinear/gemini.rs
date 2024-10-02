@@ -4,7 +4,10 @@
 use crate::{
     pcs::{
         multilinear::additive,
-        univariate::{err_too_large_deree, UnivariateIpa, UnivariateIpaCommitment, UnivariateKzg, UnivariateKzgCommitment},
+        univariate::{
+            err_too_large_deree, ipa::UnivariateIpa, UnivariateIpaCommitment, UnivariateKzg,
+            UnivariateKzgCommitment,
+        },
         Evaluation, Point, PolynomialCommitmentScheme,
     },
     poly::{
@@ -426,7 +429,7 @@ mod test {
         pcs::{
             multilinear::gemini::Gemini,
             test::{run_batch_commit_open_verify, run_commit_open_verify},
-            univariate::{UnivariateIpa, UnivariateKzg},
+            univariate::{ipa::UnivariateIpa, UnivariateKzg},
         },
         util::transcript::Keccak256Transcript,
     };
