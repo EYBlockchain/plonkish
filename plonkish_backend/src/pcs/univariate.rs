@@ -15,12 +15,8 @@ mod hyrax;
 pub(super) mod ipa;
 mod kzg;
 
-pub use hyrax::{
-    UnivariateHyrax, UnivariateHyraxCommitment, UnivariateHyraxParam, UnivariateHyraxVerifierParam,
-};
-pub use ipa::{
-    UnivariateIpa, UnivariateIpaCommitment, UnivariateIpaParam, UnivariateIpaVerifierParam,
-};
+pub use hyrax::{UnivariateHyrax, UnivariateHyraxCommitment, UnivariateHyraxParam};
+pub use ipa::{UnivariateIpa, UnivariateIpaCommitment, UnivariateIpaParam};
 pub use kzg::{
     UnivariateKzg, UnivariateKzgCommitment, UnivariateKzgParam, UnivariateKzgProverParam,
     UnivariateKzgVerifierParam,

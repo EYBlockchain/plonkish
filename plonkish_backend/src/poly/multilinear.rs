@@ -630,6 +630,8 @@ fn merge_in_place<F: Field>(
     }
 }
 
+// Set target[i] = (eval_1 - eval_0) * x_i + eval_0,
+// where eval_0 = evals[2*i] and eval_1 = evals[2*i+1].
 pub(crate) fn merge_into<F: Field>(
     target: &mut Vec<F>,
     evals: &[F],

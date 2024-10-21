@@ -1,6 +1,6 @@
 use crate::{
     pcs::{
-        univariate::{additive, err_too_large_deree, monomial_g_to_lagrange_g, validate_input},
+        univariate::{additive, err_too_large_deree, validate_input},
         Additive, Evaluation, Point, PolynomialCommitmentScheme,
     },
     poly::{
@@ -10,7 +10,7 @@ use crate::{
     util::{
         arithmetic::{
             batch_projective_to_affine, inner_product, powers, squares, variable_base_msm, Curve,
-            CurveAffine, CurveExt, Field, Group, PrimeField,
+            CurveAffine, CurveExt, Field, Group,
         },
         chain, izip,
         parallel::parallelize,
@@ -30,7 +30,6 @@ pub struct UnivariateIpa<C: CurveAffine>(PhantomData<C>);
 pub struct UnivariateIpaParam<C: CurveAffine> {
     k: usize,
     monomial: Vec<C>,
-    lagrange: Vec<C>,
     h: C,
 }
 
@@ -47,33 +46,8 @@ impl<C: CurveAffine> UnivariateIpaParam<C> {
         &self.monomial
     }
 
-    pub fn lagrange(&self) -> &[C] {
-        &self.lagrange
-    }
-
     pub fn h(&self) -> &C {
         &self.h
-    }
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct UnivariateIpaVerifierParam<C: CurveAffine> {
-    k: usize,
-    monomial: Vec<C>,
-    h: C,
-}
-
-impl<C: CurveAffine> UnivariateIpaVerifierParam<C> {
-    pub fn k(&self) -> usize {
-        self.k
-    }
-
-    pub fn h(&self) -> &C {
-        &self.h
-    }
-
-    pub fn monomial(&self) -> &[C] {
-        &self.monomial
     }
 }
 
@@ -122,7 +96,7 @@ where
 {
     type Param = UnivariateIpaParam<C>;
     type ProverParam = UnivariateIpaParam<C>;
-    type VerifierParam = UnivariateIpaVerifierParam<C>;
+    type VerifierParam = UnivariateIpaParam<C>;
     type Polynomial = UnivariatePolynomial<C::Scalar>;
     type Commitment = UnivariateIpaCommitment<C>;
     type CommitmentChunk = C;
@@ -130,7 +104,6 @@ where
     fn setup(poly_size: usize, _: usize, _: impl RngCore) -> Result<Self::Param, Error> {
         // TODO: Support arbitrary degree.
         assert!(poly_size.is_power_of_two());
-        assert!(poly_size.ilog2() <= C::Scalar::S);
 
         let k = poly_size.ilog2() as usize;
 
@@ -147,17 +120,10 @@ where
             batch_projective_to_affine(&g)
         };
 
-        let lagrange = monomial_g_to_lagrange_g(&monomial);
-
         let hasher = C::CurveExt::hash_to_curve("UnivariateIpa::setup");
         let h = hasher(&[1]).to_affine();
 
-        Ok(Self::Param {
-            k,
-            monomial,
-            lagrange,
-            h,
-        })
+        Ok(Self::Param { k, monomial, h })
     }
 
     fn trim(
@@ -174,34 +140,22 @@ where
         }
 
         let monomial = param.monomial[..poly_size].to_vec();
-        let lagrange = if param.lagrange.len() == poly_size {
-            param.lagrange.clone()
-        } else {
-            monomial_g_to_lagrange_g(&monomial)
-        };
 
         let pp = Self::ProverParam {
             k,
             monomial: monomial.clone(),
-            lagrange,
             h: param.h,
         };
-        let vp = Self::VerifierParam {
-            k,
-            monomial,
-            h: param.h,
-        };
-        Ok((pp, vp))
+        Ok((pp.clone(), pp))
     }
 
     fn commit(pp: &Self::ProverParam, poly: &Self::Polynomial) -> Result<Self::Commitment, Error> {
+        assert_eq!(poly.basis(), Monomial);
+
         validate_input("commit", pp.degree(), [poly])?;
 
         let coeffs = poly.coeffs();
-        let bases = match poly.basis() {
-            Monomial => pp.monomial(),
-            Lagrange => pp.lagrange(),
-        };
+        let bases = pp.monomial();
         Ok(variable_base_msm(coeffs, &bases[..coeffs.len()]).into()).map(UnivariateIpaCommitment)
     }
 
@@ -433,17 +387,20 @@ mod test {
         },
         util::transcript::Keccak256Transcript,
     };
-    use halo2_curves::pasta::pallas::Affine;
+    use halo2_curves::{grumpkin, pasta::pallas::Affine};
 
-    type Pcs = UnivariateIpa<Affine>;
+    type PastaPcs = UnivariateIpa<Affine>;
+    type GrumpkinPcs = UnivariateIpa<grumpkin::G1Affine>;
 
     #[test]
     fn commit_open_verify() {
-        run_commit_open_verify::<_, Pcs, Keccak256Transcript<_>>();
+        run_commit_open_verify::<_, PastaPcs, Keccak256Transcript<_>>();
+        run_commit_open_verify::<_, GrumpkinPcs, Keccak256Transcript<_>>();
     }
 
     #[test]
     fn batch_commit_open_verify() {
-        run_batch_commit_open_verify::<_, Pcs, Keccak256Transcript<_>>();
+        run_batch_commit_open_verify::<_, PastaPcs, Keccak256Transcript<_>>();
+        run_batch_commit_open_verify::<_, GrumpkinPcs, Keccak256Transcript<_>>();
     }
 }
