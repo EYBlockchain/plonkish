@@ -175,10 +175,7 @@ pub(super) fn lookup_constraints<F: PrimeField>(
             let [m, h] = &[m, h]
                 .map(|poly| Query::new(poly, Rotation::cur()))
                 .map(Expression::<F>::Polynomial);
-            let (inputs, tables) = lookup
-                .iter()
-                .map(|(input, table)| (input, table))
-                .unzip::<_, _, Vec<_>, Vec<_>>();
+            let (inputs, tables) = lookup.iter().cloned().unzip::<_, _, Vec<_>, Vec<_>>();
             let input = &Expression::distribute_powers(inputs, beta);
             let table = &Expression::distribute_powers(tables, beta);
             [h * (input + gamma) * (table + gamma) - (table + gamma) + m * (input + gamma)]

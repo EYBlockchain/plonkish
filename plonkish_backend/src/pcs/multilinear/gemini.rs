@@ -258,6 +258,10 @@ where
         }
         let uni_poly = UnivariatePolynomial::monomial(poly.evals().to_vec());
 
+        if uni_poly.coeffs().is_empty() {
+            return Ok(UnivariateIpaCommitment::<C>::default());
+        }
+
         UnivariateIpa::commit(pp, &uni_poly)
     }
 

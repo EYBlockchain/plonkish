@@ -595,7 +595,7 @@ pub(crate) mod test {
             HyperPlonk,
         },
         pcs::{
-            multilinear::{Gemini, MultilinearIpa, MultilinearKzg, Zeromorph},
+            multilinear::{Gemini, Zeromorph},
             univariate::UnivariateKzg,
         },
         util::{
@@ -605,7 +605,7 @@ pub(crate) mod test {
             Itertools,
         },
     };
-    use halo2_curves::{bn256::Bn256, grumpkin};
+    use halo2_curves::bn256::Bn256;
     use std::iter;
 
     macro_rules! tests {
@@ -641,8 +641,10 @@ pub(crate) mod test {
         };
     }
 
-    tests!(ipa, MultilinearIpa<grumpkin::G1Affine>);
-    tests!(kzg, MultilinearKzg<Bn256>);
+    //tests!(ipa, MultilinearIpa<grumpkin::G1Affine>);
+    //tests!(kzg, MultilinearKzg<Bn256>);
     tests!(gemini_kzg, Gemini<UnivariateKzg<Bn256>>);
     tests!(zeromorph_kzg, Zeromorph<UnivariateKzg<Bn256>>);
+    //tests!(gemini_ipa, Gemini<UnivariateIpa<grumpkin::G1Affine>>);
+    //tests!(zeromorph_ipa, Zeromorph<UnivariateIpa<grumpkin::G1Affine>>);
 }

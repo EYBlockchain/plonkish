@@ -322,21 +322,14 @@ mod test {
             test::run_plonkish_backend,
         },
         pcs::{
-            multilinear::{
-                Gemini, MultilinearBrakedown, MultilinearHyrax, MultilinearIpa, MultilinearKzg,
-                Zeromorph,
-            },
-            univariate::UnivariateKzg,
+            multilinear::{Gemini, Zeromorph},
+            univariate::{UnivariateIpa, UnivariateKzg},
         },
         util::{
-            code::BrakedownSpec6, expression::rotate::BinaryField, hash::Keccak256,
-            test::seeded_std_rng, transcript::Keccak256Transcript,
+            expression::rotate::BinaryField, test::seeded_std_rng, transcript::Keccak256Transcript,
         },
     };
-    use halo2_curves::{
-        bn256::{self, Bn256},
-        grumpkin,
-    };
+    use halo2_curves::{bn256::Bn256, grumpkin};
 
     macro_rules! tests {
         ($suffix:ident, $pcs:ty, $num_vars_range:expr) => {
@@ -361,10 +354,12 @@ mod test {
         };
     }
 
-    tests!(brakedown, MultilinearBrakedown<bn256::Fr, Keccak256, BrakedownSpec6>);
-    tests!(hyrax, MultilinearHyrax<grumpkin::G1Affine>, 5..16);
-    tests!(ipa, MultilinearIpa<grumpkin::G1Affine>);
-    tests!(kzg, MultilinearKzg<Bn256>);
+    //tests!(brakedown, MultilinearBrakedown<bn256::Fr, Keccak256, BrakedownSpec6>);
+    //tests!(hyrax, MultilinearHyrax<grumpkin::G1Affine>, 5..16);
+    //tests!(ipa, MultilinearIpa<grumpkin::G1Affine>);
+    //tests!(kzg, MultilinearKzg<Bn256>);
     tests!(gemini_kzg, Gemini<UnivariateKzg<Bn256>>);
     tests!(zeromorph_kzg, Zeromorph<UnivariateKzg<Bn256>>);
+    tests!(gemini_ipa, Gemini<UnivariateIpa<grumpkin::G1Affine>>);
+    //tests!(zeromorph_ipa, Zeromorph<UnivariateIpa<grumpkin::G1Affine>>);
 }

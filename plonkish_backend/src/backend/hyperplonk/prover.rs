@@ -118,17 +118,14 @@ pub(super) fn lookup_compressed_poly<F: PrimeField, R: Rotatable + From<usize>>(
             .sum::<MultilinearPolynomial<_>>()
     };
 
-    let (inputs, tables) = lookup
-        .iter()
-        .map(|(input, table)| (input, table))
-        .unzip::<_, _, Vec<_>, Vec<_>>();
+    let (inputs, tables) = lookup.iter().cloned().unzip::<_, _, Vec<_>, Vec<_>>();
 
     let timer = start_timer(|| "compressed_input_poly");
-    let compressed_input_poly = compress(&inputs);
+    let compressed_input_poly = compress(&inputs.iter().collect::<Vec<_>>());
     end_timer(timer);
 
     let timer = start_timer(|| "compressed_table_poly");
-    let compressed_table_poly = compress(&tables);
+    let compressed_table_poly = compress(&tables.iter().collect::<Vec<_>>());
     end_timer(timer);
 
     [compressed_input_poly, compressed_table_poly]
