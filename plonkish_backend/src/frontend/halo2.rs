@@ -1,3 +1,5 @@
+// Defines the struct Halo2Circuit, which implements the trait PlonkishCircuit.
+
 use crate::{
     backend::{PlonkishCircuit, PlonkishCircuitInfo, WitnessEncoding},
     util::{
@@ -53,17 +55,23 @@ pub struct Halo2Circuit<F: Field, C: Circuit<F>> {
     row_mapping: Vec<usize>,
 }
 
+
 impl<F: Field, C: CircuitExt<F>> Halo2Circuit<F, C> {
+    // Generate a new Halo2Circuit from a circuit of type C that implements CircuitExt trait, which extends the Circuit trait from halo2
     pub fn new<E: WitnessEncoding>(k: usize, circuit: C) -> Self {
+        // Obtain constraint system cs and config from circuit 
         let (cs, config) = {
             let mut cs = ConstraintSystem::default();
             let config = C::configure(&mut cs);
             (cs, config)
         };
+        // Obtain constants from constraint system
         let constants = cs.constants().clone();
-
+        // Obtain the the number of witness polynomials for each phase (phase refers to multi phase challenges)
         let num_witness_polys = num_by_phase(&cs.advice_column_phase());
+        // Obtain the index of each advice column within the phase
         let advice_idx_in_phase = idx_in_phase(&cs.advice_column_phase());
+        // Order the challenges by phase
         let challenge_idx = idx_order_by_phase(&cs.challenge_phase(), 0);
         let row_mapping = E::row_mapping(k);
 
@@ -97,7 +105,9 @@ impl<F: Field, C: Circuit<F>> AsRef<C> for Halo2Circuit<F, C> {
     }
 }
 
+// Implement PlonkishCircuit trait from backend for Halo2Circuit struct 
 impl<F: Field, C: Circuit<F>> PlonkishCircuit<F> for Halo2Circuit<F, C> {
+    // Get PlonkishCircuitInfo from a Halo2 Circuit without preprocessing, i.e. setting fixed/ selector columns or copy constraints. 
     fn circuit_info_without_preprocess(&self) -> Result<PlonkishCircuitInfo<F>, crate::Error> {
         let Self {
             k,
@@ -106,7 +116,9 @@ impl<F: Field, C: Circuit<F>> PlonkishCircuit<F> for Halo2Circuit<F, C> {
             challenge_idx,
             ..
         } = self;
+        // Generate indices of advice columns so that they are ordered by phase
         let advice_idx = advice_idx(cs);
+        // Convert expressions from halo2 to backend 
         let constraints = cs
             .gates()
             .iter()
@@ -116,6 +128,7 @@ impl<F: Field, C: Circuit<F>> PlonkishCircuit<F> for Halo2Circuit<F, C> {
                 })
             })
             .collect();
+        // Convert lookup expressions from halo2 to backend 
         let lookups = cs
             .lookups()
             .iter()
@@ -135,9 +148,12 @@ impl<F: Field, C: Circuit<F>> PlonkishCircuit<F> for Halo2Circuit<F, C> {
             .collect();
 
         let num_instances = instances.iter().map(Vec::len).collect_vec();
+        // Set preprocess_polys, initialized to 0, with 2^k rows. 
         let preprocess_polys =
             vec![vec![F::ZERO; 1 << k]; cs.num_selectors() + cs.num_fixed_columns()];
+        //Obtain indices of columns from the contraint system 
         let column_idx = column_idx(cs);
+        // Initialize permutations defining copy constraints 
         let permutations = cs
             .permutation()
             .get_columns()
@@ -161,6 +177,7 @@ impl<F: Field, C: Circuit<F>> PlonkishCircuit<F> for Halo2Circuit<F, C> {
         })
     }
 
+    // Get PlonkishCircuitInfo from a Halo2 Circuit with preprocessing, i.e. setting fixed/ selector columns or copy constraints. 
     fn circuit_info(&self) -> Result<PlonkishCircuitInfo<F>, crate::Error> {
         let Self {
             k,
@@ -175,7 +192,9 @@ impl<F: Field, C: Circuit<F>> PlonkishCircuit<F> for Halo2Circuit<F, C> {
         let mut circuit_info = self.circuit_info_without_preprocess()?;
 
         let num_instances = instances.iter().map(Vec::len).collect_vec();
+        //Obtain indices of columns from the contraint system 
         let column_idx = column_idx(cs);
+        // Obtain initial permutations from constraint system, for now no copy constraints are set 
         let permutation_column_idx = cs
             .permutation()
             .get_columns()
@@ -185,6 +204,7 @@ impl<F: Field, C: Circuit<F>> PlonkishCircuit<F> for Halo2Circuit<F, C> {
                 (key, column_idx[&key])
             })
             .collect();
+        // Initialize preprocess collector
         let mut preprocess_collector = PreprocessCollector {
             k: *k,
             num_instances,
@@ -194,6 +214,7 @@ impl<F: Field, C: Circuit<F>> PlonkishCircuit<F> for Halo2Circuit<F, C> {
             row_mapping,
         };
 
+        // Use circuit defined in Halo2Circuit to set the circuit in preprocess collector
         C::FloorPlanner::synthesize(
             &mut preprocess_collector,
             circuit,
@@ -202,6 +223,7 @@ impl<F: Field, C: Circuit<F>> PlonkishCircuit<F> for Halo2Circuit<F, C> {
         )
         .map_err(|err| crate::Error::InvalidSnark(format!("Synthesize failure: {err:?}")))?;
 
+        // Obtain the fixed and selector columns from the preprocess collector
         circuit_info.preprocess_polys = chain![
             batch_invert_assigned(preprocess_collector.fixeds),
             preprocess_collector.selectors.into_iter().map(|selectors| {
@@ -212,15 +234,19 @@ impl<F: Field, C: Circuit<F>> PlonkishCircuit<F> for Halo2Circuit<F, C> {
             }),
         ]
         .collect();
+    // Obtain the copy constraints from the preprocess collector
         circuit_info.permutations = preprocess_collector.permutation.into_cycles();
 
         Ok(circuit_info)
     }
 
+    // Return instances
     fn instances(&self) -> &[Vec<F>] {
         &self.instances
     }
 
+
+    // Synthesize a circuit for a particular phase with an instance and witness of the circuit,  and challenges
     fn synthesize(&self, phase: usize, challenges: &[F]) -> Result<Vec<Vec<F>>, crate::Error> {
         let instances = self.instances.iter().map(Vec::as_slice).collect_vec();
         let mut witness_collector = WitnessCollector {
@@ -229,6 +255,7 @@ impl<F: Field, C: Circuit<F>> PlonkishCircuit<F> for Halo2Circuit<F, C> {
             advice_idx_in_phase: &self.advice_idx_in_phase,
             challenge_idx: &self.challenge_idx,
             instances: instances.as_slice(),
+            // all advice columns are initialized to zero, there are 2^k rows and self.num_witness_polys[phase] columns 
             advices: vec![vec![F::ZERO.into(); 1 << self.k]; self.num_witness_polys[phase]],
             challenges,
             row_mapping: &self.row_mapping,
@@ -256,6 +283,7 @@ struct PreprocessCollector<'a, F: Field> {
     row_mapping: &'a [usize],
 }
 
+//Perform pre-processing for the circuit, i.e. setting fixed/ selector columns and copy constraints.
 impl<'a, F: Field> Assignment<F> for PreprocessCollector<'a, F> {
     fn enter_region<NR, N>(&mut self, _: N)
     where
@@ -273,6 +301,7 @@ impl<'a, F: Field> Assignment<F> for PreprocessCollector<'a, F> {
     {
     }
 
+    // Set the values of the selector columns
     fn enable_selector<A, AR>(&mut self, _: A, selector: &Selector, row: usize) -> Result<(), Error>
     where
         A: FnOnce() -> AR,
@@ -287,6 +316,7 @@ impl<'a, F: Field> Assignment<F> for PreprocessCollector<'a, F> {
         Ok(())
     }
 
+    // The instance is not set in preprocessing so unless the cell is out of bounds return Value::unknown.
     fn query_instance(&self, column: Column<Instance>, row: usize) -> Result<Value<F>, Error> {
         self.num_instances
             .get(column.index())
@@ -294,6 +324,7 @@ impl<'a, F: Field> Assignment<F> for PreprocessCollector<'a, F> {
             .ok_or(Error::BoundsFailure)
     }
 
+    // Advice columns are set later in WitnessCollector
     fn assign_advice<V, VR, A, AR>(
         &mut self,
         _: A,
@@ -310,6 +341,7 @@ impl<'a, F: Field> Assignment<F> for PreprocessCollector<'a, F> {
         Ok(())
     }
 
+    // Set the values of the fixed columns
     fn assign_fixed<V, VR, A, AR>(
         &mut self,
         _: A,
@@ -336,6 +368,7 @@ impl<'a, F: Field> Assignment<F> for PreprocessCollector<'a, F> {
         Ok(())
     }
 
+    // Add a copy constraint to the permutation
     fn copy(
         &mut self,
         lhs_column: Column<Any>,
@@ -353,6 +386,7 @@ impl<'a, F: Field> Assignment<F> for PreprocessCollector<'a, F> {
             .copy(lhs_column, lhs_row, rhs_column, rhs_row)
     }
 
+    // Set cells in a fixed column for all rows from from_row to the end
     fn fill_from_row(
         &mut self,
         column: Column<Fixed>,
@@ -376,6 +410,7 @@ impl<'a, F: Field> Assignment<F> for PreprocessCollector<'a, F> {
         Ok(())
     }
 
+    // Challenges are created later 
     fn get_challenge(&self, _: Challenge) -> Value<F> {
         Value::unknown()
     }
@@ -390,6 +425,7 @@ impl<'a, F: Field> Assignment<F> for PreprocessCollector<'a, F> {
     fn pop_namespace(&mut self, _: Option<String>) {}
 }
 
+//Stores copy constraints in a permutation
 #[derive(Debug)]
 struct Permutation {
     column_idx: HashMap<(Any, usize), usize>,
@@ -405,7 +441,7 @@ impl Permutation {
             cycle_idx: Default::default(),
         }
     }
-
+    //Add copy constraint
     fn copy(
         &mut self,
         lhs_column: Column<Any>,
@@ -413,6 +449,7 @@ impl Permutation {
         rhs_column: Column<Any>,
         rhs_row: usize,
     ) -> Result<(), Error> {
+        // Get column indices in the matrix
         let lhs_idx = *self
             .column_idx
             .get(&(*lhs_column.column_type(), lhs_column.index()))
@@ -427,12 +464,14 @@ impl Permutation {
             self.cycle_idx.get(&(rhs_idx, rhs_row)).copied(),
         ) {
             (Some(lhs_cycle_idx), Some(rhs_cycle_idx)) => {
+                // Merge the two cycles together
                 for cell in self.cycles[rhs_cycle_idx].iter().copied() {
                     self.cycle_idx.insert(cell, lhs_cycle_idx);
                 }
                 let rhs_cycle = mem::take(&mut self.cycles[rhs_cycle_idx]);
                 self.cycles[lhs_cycle_idx].extend(rhs_cycle);
             }
+            // If only one of the cells are in a cycle, add both cells to that cycle. If neither of the cells are in a cycle, add them to a new cycle
             cycle_idx => {
                 let cycle_idx = if let (Some(cycle_idx), None) | (None, Some(cycle_idx)) = cycle_idx
                 {
@@ -462,6 +501,7 @@ impl Permutation {
     }
 }
 
+// This assigns the witness values to the circuit
 #[derive(Debug)]
 struct WitnessCollector<'a, F: Field> {
     k: u32,
@@ -491,6 +531,7 @@ impl<'a, F: Field> Assignment<F> for WitnessCollector<'a, F> {
     {
     }
 
+    // Selectors are enabled earlier in PreprocessCollector
     fn enable_selector<A, AR>(&mut self, _: A, _: &Selector, _: usize) -> Result<(), Error>
     where
         A: FnOnce() -> AR,
@@ -499,6 +540,7 @@ impl<'a, F: Field> Assignment<F> for WitnessCollector<'a, F> {
         Ok(())
     }
 
+    // Return cell from instance column
     fn query_instance(&self, column: Column<Instance>, row: usize) -> Result<Value<F>, Error> {
         self.instances
             .get(column.index())
@@ -507,6 +549,7 @@ impl<'a, F: Field> Assignment<F> for WitnessCollector<'a, F> {
             .ok_or(Error::BoundsFailure)
     }
 
+    //Assign witness to circuit
     fn assign_advice<V, VR, A, AR>(
         &mut self,
         _: A,
@@ -520,6 +563,7 @@ impl<'a, F: Field> Assignment<F> for WitnessCollector<'a, F> {
         A: FnOnce() -> AR,
         AR: Into<String>,
     {
+        //wait until correct phase to assign the advice column
         if self.phase != column.column_type().phase() {
             return Ok(());
         }
@@ -537,6 +581,7 @@ impl<'a, F: Field> Assignment<F> for WitnessCollector<'a, F> {
         Ok(())
     }
 
+    // Fixed columns are set earlier in PreprocessCollector
     fn assign_fixed<V, VR, A, AR>(
         &mut self,
         _: A,
@@ -553,10 +598,12 @@ impl<'a, F: Field> Assignment<F> for WitnessCollector<'a, F> {
         Ok(())
     }
 
+    // Copy Constraints are enabled earlier in PreprocessCollector
     fn copy(&mut self, _: Column<Any>, _: usize, _: Column<Any>, _: usize) -> Result<(), Error> {
         Ok(())
     }
 
+    // Fixed columns are set earlier in PreprocessCollector
     fn fill_from_row(
         &mut self,
         _: Column<Fixed>,
@@ -584,11 +631,15 @@ impl<'a, F: Field> Assignment<F> for WitnessCollector<'a, F> {
     fn pop_namespace(&mut self, _: Option<String>) {}
 }
 
+
+// Output index of each advice column in the matrix such that columns are ordered by phase (with all advice columms at the end of the matrix)
 fn advice_idx<F: Field>(cs: &ConstraintSystem<F>) -> Vec<usize> {
+    // Order cs.advice_column_phase() such that cs.advice_column_phase()[i] <= cs.advice_column_phase()[i+1] and add the new index to the advice_offset (total number of columns - num advice columns) for each element.
     let advice_offset = cs.num_instance_columns() + cs.num_fixed_columns() + cs.num_selectors();
     idx_order_by_phase(&cs.advice_column_phase(), advice_offset)
 }
 
+//On input the constraint system output (HashMap(label,index1), index2) where label denotes whether its a Instance/ fixed or advice column, index1 is the original index in the constraint system,  and index2 is the new index of the column in the matrix (with advice columns ordered by phase))
 fn column_idx<F: Field>(cs: &ConstraintSystem<F>) -> HashMap<(Any, usize), usize> {
     let advice_idx = advice_idx(cs);
     chain![
@@ -601,10 +652,12 @@ fn column_idx<F: Field>(cs: &ConstraintSystem<F>) -> HashMap<(Any, usize), usize
     .collect()
 }
 
+// Return the total number of phases, i.e. the max value in phases vector +1
 fn num_phases(phases: &[u8]) -> usize {
     phases.iter().max().copied().unwrap_or_default() as usize + 1
 }
 
+// Outputs the number of elements in the phases vector for each phase
 fn num_by_phase(phases: &[u8]) -> Vec<usize> {
     phases.iter().copied().fold(
         vec![0usize; num_phases(phases)],
@@ -615,6 +668,7 @@ fn num_by_phase(phases: &[u8]) -> Vec<usize> {
     )
 }
 
+// For each advice column in phase j, output k such that this is the kth advice column in phase j
 fn idx_in_phase(phases: &[u8]) -> Vec<usize> {
     phases
         .iter()
@@ -627,6 +681,7 @@ fn idx_in_phase(phases: &[u8]) -> Vec<usize> {
         .collect_vec()
 }
 
+//Output new order of phases such that phases[i] <= phases[i+1] and add the new index to the offset for each element
 fn idx_order_by_phase(phases: &[u8], offset: usize) -> Vec<usize> {
     phases
         .iter()
@@ -639,6 +694,7 @@ fn idx_order_by_phase(phases: &[u8], offset: usize) -> Vec<usize> {
         .collect()
 }
 
+// returns output[0] =0,  output[i] = |j :  phases[j] <= i -1 |
 fn phase_offsets(phases: &[u8]) -> Vec<usize> {
     num_by_phase(phases)
         .into_iter()
@@ -650,6 +706,7 @@ fn phase_offsets(phases: &[u8]) -> Vec<usize> {
         .collect()
 }
 
+//convert from an expression defined in halo2 to an expression defined in backend 
 fn convert_expression<F: Field>(
     cs: &ConstraintSystem<F>,
     advice_idx: &[usize],
@@ -679,7 +736,9 @@ fn convert_expression<F: Field>(
     )
 }
 
+//For a matrix of elememts a/b return a matric of elements a b^-1
 fn batch_invert_assigned<F: Field>(assigneds: Vec<Vec<Assigned<F>>>) -> Vec<Vec<F>> {
+    // collect all the denominators in Assigned together into denoms
     let mut denoms: Vec<_> = assigneds
         .iter()
         .map(|f| {

@@ -1,3 +1,5 @@
+//This defines a circuit that generates a random instance that satisfies the standard gate in the Vanilla Plonk protocol.
+
 pub use vanilla_plonk::VanillaPlonk;
 
 mod vanilla_plonk {
