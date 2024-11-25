@@ -69,6 +69,9 @@ fn err_too_many_variates(function: &str, upto: usize, got: usize) -> Error {
     })
 }
 
+/// Given a multilinear polynomial `poly`, a point `x` and a function `f`, returns `f(q_i)` and an evaluation v
+/// such that `poly - v = sum_{i=0}^{num_vars - 1}(X_i - x_i)q_i`, where each `q_i` is multilinear in `i` variables.
+/// Usually `f` will just be the zeromorph isomorphism that transforms `q_i` into the appropriate univariate polynomial.
 fn quotients<F: Field, T>(
     poly: &MultilinearPolynomial<F>,
     point: &[F],
