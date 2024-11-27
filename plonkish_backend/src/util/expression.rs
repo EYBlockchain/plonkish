@@ -15,6 +15,8 @@ pub mod rotate;
 pub use rotate::Rotation;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+
+// This describes a query to a polynomial given by the index of the correponding column in the trace.
 pub struct Query {
     poly: usize,
     rotation: Rotation,
@@ -116,7 +118,7 @@ impl<F: Clone> Expression<F> {
             )
         };
         match self {
-            Expression::Constant(scalar) => constant(scalar.clone()),
+            Expression::Constant(scalar) => constant(scalar.clone()),   
             Expression::CommonPolynomial(poly) => common_poly(*poly),
             Expression::Polynomial(query) => poly(*query),
             Expression::Challenge(index) => challenge(*index),

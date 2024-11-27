@@ -107,12 +107,14 @@ impl<F: Clone> PlonkishCircuitInfo<F> {
                 .unwrap_or(true)
     }
 
+    //Total number of columns/ polynomials in the circuit.
     pub fn num_poly(&self) -> usize {
         self.num_instances.len()
             + self.preprocess_polys.len()
             + self.num_witness_polys.iter().sum::<usize>()
     }
 
+    //Return all index of columns that are used in the permutation, in order.
     pub fn permutation_polys(&self) -> Vec<usize> {
         self.permutations
             .iter()
