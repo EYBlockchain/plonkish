@@ -57,7 +57,7 @@ pub(crate) fn lookup_compressed_polys<F: PrimeField, R: Rotatable + From<usize>>
 
     let polys = polys.iter().map(Borrow::borrow).collect_vec();
     let num_vars = polys[0].num_vars();
-    // This is the sum of all elements in the input and table 
+    // This is the sum of all elements in the input and table
     let expression = lookups
         .iter()
         .flat_map(|lookup| lookup.iter().map(|(input, table)| (input + table)))
@@ -170,7 +170,7 @@ pub(super) fn lookup_m_poly<F: PrimeField + Hash>(
                             .and_modify(|count| *count += 1)
                             .or_insert(1);
                     } else {
-                        // If the input is not found in the table, the lookup is invalid 
+                        // If the input is not found in the table, the lookup is invalid
                         *valid = false;
                         break;
                     }
