@@ -46,7 +46,9 @@ pub(crate) fn preprocess<F: PrimeField, Pcs: PolynomialCommitmentScheme<F>>(
 
     let num_vars = circuit_info.k;
     let poly_size = 1 << num_vars;
+    // Batch size for the polynomial commitment scheme 
     let batch_size = batch_size(circuit_info);
+    // Trim the parameters for the PCS to those necessary for the size of the circuit
     let (pcs_pp, pcs_vp) = Pcs::trim(param, poly_size, batch_size)?;
 
     // Compute preprocesses comms
@@ -56,6 +58,7 @@ pub(crate) fn preprocess<F: PrimeField, Pcs: PolynomialCommitmentScheme<F>>(
         .cloned()
         .map(MultilinearPolynomial::new)
         .collect_vec();
+    // Batch commit to all pre-processing polynomials - i.e. fixed colummns/ selector columns
     let (preprocess_polys, preprocess_comms) = batch_commit(&pcs_pp, preprocess_polys)?;
 
     // Compute permutation polys and comms
@@ -66,8 +69,9 @@ pub(crate) fn preprocess<F: PrimeField, Pcs: PolynomialCommitmentScheme<F>>(
     );
     let (permutation_polys, permutation_comms) = batch_commit(&pcs_pp, permutation_polys)?;
 
-    // Compose expression
+    // Compose an expression for all the constraints
     let (num_permutation_z_polys, expression) = compose(circuit_info);
+    // Setup parameters for verifier and prover
     let vp = HyperPlonkVerifierParam {
         pcs: pcs_vp,
         num_instances: circuit_info.num_instances.clone(),
@@ -105,16 +109,21 @@ pub(crate) fn preprocess<F: PrimeField, Pcs: PolynomialCommitmentScheme<F>>(
     Ok((pp, vp))
 }
 
+// compose all constraints
 pub(crate) fn compose<F: PrimeField>(
     circuit_info: &PlonkishCircuitInfo<F>,
 ) -> (usize, Expression<F>) {
+    //total number of challenges
     let challenge_offset = circuit_info.num_challenges.iter().sum::<usize>();
+    // Generates three extra challenges beta, gamma, alpha
     let [beta, gamma, alpha] =
         &array::from_fn(|idx| Expression::<F>::Challenge(challenge_offset + idx));
 
+    // lookup_zero_checks are the sumcheck constraints in the logup GKR protocol
     let (lookup_constraints, lookup_zero_checks) = lookup_constraints(circuit_info, beta, gamma);
 
     let max_degree = max_degree(circuit_info, Some(&lookup_constraints));
+    // Generate constraints for the permuation argument
     let (num_permutation_z_polys, permutation_constraints) = permutation_constraints(
         circuit_info,
         max_degree,
@@ -125,8 +134,11 @@ pub(crate) fn compose<F: PrimeField>(
 
     let expression = {
         let constraints = chain![
+            // constraints from halo2 frontend , i.e. custom gates
             circuit_info.constraints.iter(),
+            // constraints from lookup argument
             lookup_constraints.iter(),
+            // constraints from permutation argument
             permutation_constraints.iter(),
         ]
         .collect_vec();
@@ -159,11 +171,13 @@ pub(super) fn max_degree<F: PrimeField>(
     .unwrap()
 }
 
+//generate lookup constraints using logup GKR 
 pub(super) fn lookup_constraints<F: PrimeField>(
     circuit_info: &PlonkishCircuitInfo<F>,
     beta: &Expression<F>,
     gamma: &Expression<F>,
 ) -> (Vec<Expression<F>>, Vec<Expression<F>>) {
+    // Define indices where m and h polynomials begin in the trace
     let m_offset = circuit_info.num_poly() + circuit_info.permutation_polys().len();
     let h_offset = m_offset + circuit_info.lookups.len();
     let constraints = circuit_info
@@ -172,18 +186,23 @@ pub(super) fn lookup_constraints<F: PrimeField>(
         .zip(m_offset..)
         .zip(h_offset..)
         .flat_map(|((lookup, m), h)| {
+            // make m and h into polynomials, these are created during proving 
             let [m, h] = &[m, h]
                 .map(|poly| Query::new(poly, Rotation::cur()))
                 .map(Expression::<F>::Polynomial);
+            // separate the input and tables from the lookup
             let (inputs, tables) = lookup
                 .iter()
                 .map(|(input, table)| (input, table))
                 .unzip::<_, _, Vec<_>, Vec<_>>();
+            // Returns a distributed power expression for the input and table, with base beta, i.e.  inputs[0] + \beta inputs[1] + \beta^2 inputs[2] + ...
             let input = &Expression::distribute_powers(inputs, beta);
             let table = &Expression::distribute_powers(tables, beta);
+            // h[i] = (gamma + input[i])^-1 - m[i] * (gamma + table[i])^-1
             [h * (input + gamma) * (table + gamma) - (table + gamma) + m * (input + gamma)]
         })
         .collect_vec();
+    // Every expression that must be proved in the sum check argument 
     let sum_check = (h_offset..)
         .take(circuit_info.lookups.len())
         .map(|h| Query::new(h, Rotation::cur()).into())
@@ -191,6 +210,7 @@ pub(super) fn lookup_constraints<F: PrimeField>(
     (constraints, sum_check)
 }
 
+// create constraints for the permutation argument
 pub(crate) fn permutation_constraints<F: PrimeField>(
     circuit_info: &PlonkishCircuitInfo<F>,
     max_degree: usize,
@@ -198,40 +218,53 @@ pub(crate) fn permutation_constraints<F: PrimeField>(
     gamma: &Expression<F>,
     num_builtin_witness_polys: usize,
 ) -> (usize, Vec<Expression<F>>) {
+    // get index of all columns used in the permutation
     let permutation_polys = circuit_info.permutation_polys();
     let chunk_size = max_degree - 1;
+    // If there are more columns than max degree split into chunks, num_chunks corresponds to b in halo2 gitbook
     let num_chunks = div_ceil(permutation_polys.len(), chunk_size);
+    // The offset is set to the total number of instance columns in the circuit
     let permutation_offset = circuit_info.num_poly();
     let z_offset = permutation_offset + permutation_polys.len() + num_builtin_witness_polys;
+    // Represent all columns in permutation argument  with polynomials 
     let polys = permutation_polys
         .iter()
         .map(|idx| Expression::Polynomial(Query::new(*idx, Rotation::cur())))
         .collect_vec();
+    //ids_i(X) = i 2^k + X
     let ids = (0..polys.len())
         .map(|idx| {
             let offset = F::from((idx << circuit_info.k) as u64);
             Expression::Constant(offset) + Expression::identity()
         })
         .collect_vec();
+    // Create the polynomials to represent the permutation columns
     let permutations = (permutation_offset..)
         .map(|idx| Expression::Polynomial(Query::new(idx, Rotation::cur())))
         .take(permutation_polys.len())
         .collect_vec();
+    // Represents Z polynomials from the permutation argument
     let zs = (z_offset..)
         .map(|idx| Expression::Polynomial(Query::new(idx, Rotation::cur())))
         .take(num_chunks)
         .collect_vec();
+    // Z_0(shift(X))
     let z_0_next = Expression::<F>::Polynomial(Query::new(z_offset, Rotation::next()));
     let l_0 = &Expression::<F>::lagrange(0);
     let one = &Expression::one();
+    // Create the constraints for the permutation argument 
+    // The contraints here are the like those from the halo2 gitbook but the matrix Z_0 Z_1 ... Z_{b-1}  is transposed
     let constraints = chain![
         zs.first().map(|z_0| l_0 * (z_0 - one)),
         polys
+            //iterating over b elements which are vectors of length m 
             .chunks(chunk_size)
             .zip(ids.chunks(chunk_size))
             .zip(permutations.chunks(chunk_size))
             .zip(zs.iter())
             .zip(zs.iter().skip(1).chain([&z_0_next]))
+            // z_a prod_{am)}^{(a+1)m-1}(poly_i + beta * id_i + gamma) - z_{a+1} prod_{am)}^{(a+1)m-1}(poly_i + beta * permutation_i + gamma)
+            // z_{b-1} prod_{(b-1)m)}^{bm-1}(poly_{b-1} + beta * id_{b-1} + gamma) - z_0(shift(X)) prod_{(b-1)m)}^{bm-1}(poly_{b-1} + beta * permutation_{b-1} + gamma)
             .map(|((((polys, ids), permutations), z_lhs), z_rhs)| {
                 z_lhs
                     * polys
@@ -251,11 +284,13 @@ pub(crate) fn permutation_constraints<F: PrimeField>(
     (num_chunks, constraints)
 }
 
+// Generate multi-linear permutation polynomials for permutation argument 
 pub(crate) fn permutation_polys<F: PrimeField>(
     num_vars: usize,
     permutation_polys: &[usize],
     cycles: &[Vec<(usize, usize)>],
 ) -> Vec<MultilinearPolynomial<F>> {
+    // The index of an element in permutation_polys
     let poly_index = {
         let mut poly_index = vec![0; permutation_polys.last().map(|poly| 1 + poly).unwrap_or(0)];
         for (idx, poly) in permutation_polys.iter().enumerate() {
@@ -263,6 +298,7 @@ pub(crate) fn permutation_polys<F: PrimeField>(
         }
         poly_index
     };
+    // permutations will be the matrix defining all permutation polynomials. As we start with the identity permutation, all entries have value of the index within the matrix. 
     let mut permutations = (0..permutation_polys.len() as u64)
         .map(|idx| {
             steps(F::from(idx << num_vars))
@@ -270,6 +306,7 @@ pub(crate) fn permutation_polys<F: PrimeField>(
                 .collect_vec()
         })
         .collect_vec();
+    // For each cycle we update the permutation matrix. For each entry in the matrix, we have the location of the next element in the cycle.
     for cycle in cycles.iter() {
         let (i0, j0) = cycle[0];
         let mut last = permutations[poly_index[i0]][j0];
@@ -277,6 +314,7 @@ pub(crate) fn permutation_polys<F: PrimeField>(
             mem::swap(&mut permutations[poly_index[i]][j], &mut last);
         }
     }
+    // We generate a multilinear polynomial from each column of the permutation matrix. 
     permutations
         .into_iter()
         .map(MultilinearPolynomial::new)
