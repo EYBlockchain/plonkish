@@ -8,7 +8,7 @@ pub(crate) mod test {
         },
         pcs::{
             multilinear::{Gemini, Zeromorph},
-            univariate::UnivariateKzg,
+            univariate::{UnivariateIpa, UnivariateKzg},
         },
         util::{
             expression::rotate::BinaryField,
@@ -17,7 +17,7 @@ pub(crate) mod test {
             Itertools,
         },
     };
-    use halo2_curves::bn256::Bn256;
+    use halo2_curves::{bn256::Bn256, grumpkin};
     use std::iter;
 
     macro_rules! tests {
@@ -57,6 +57,6 @@ pub(crate) mod test {
     //tests!(kzg, MultilinearKzg<Bn256>);
     tests!(gemini_kzg, Gemini<UnivariateKzg<Bn256>>);
     tests!(zeromorph_kzg, Zeromorph<UnivariateKzg<Bn256>>);
-    //tests!(gemini_ipa, Gemini<UnivariateIpa<grumpkin::G1Affine>>);
+    tests!(gemini_ipa, Gemini<UnivariateIpa<grumpkin::G1Affine>>);
     //tests!(zeromorph_ipa, Zeromorph<UnivariateIpa<grumpkin::G1Affine>>);
 }
