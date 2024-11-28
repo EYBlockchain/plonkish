@@ -71,6 +71,7 @@ where
     pub(crate) num_lookups: usize,
     pub(crate) num_permutation_z_polys: usize,
     pub(crate) num_vars: usize,
+    // Expression for the constraint system
     pub(crate) expression: Expression<F>,
     pub(crate) preprocess_comms: Vec<Pcs::Commitment>,
     pub(crate) permutation_comms: Vec<(usize, Pcs::Commitment)>,
@@ -85,6 +86,7 @@ where
     type ProverParam = HyperPlonkProverParam<F, Pcs>;
     type VerifierParam = HyperPlonkVerifierParam<F, Pcs>;
 
+    //TO DO - for KZG we want to use a trusted setup from a ceremony as currently generated in nightfish/ nightfall
     fn setup(
         circuit_info: &PlonkishCircuitInfo<F>,
         rng: impl RngCore,
@@ -92,7 +94,9 @@ where
         assert!(circuit_info.is_well_formed());
 
         let num_vars = circuit_info.k;
+        // number of variables in the multilinear polynomial
         let poly_size = 1 << num_vars;
+        // set batch size for polynomial commitment scheme
         let batch_size = batch_size(circuit_info);
         Pcs::setup(poly_size, batch_size, rng)
     }
@@ -115,12 +119,14 @@ where
     ) -> Result<(), Error> {
         let instance_polys = {
             let instances = circuit.instances();
+            //Check there is the correct amount of instances and write them to the transcript
             for (num_instances, instances) in pp.num_instances.iter().zip_eq(instances) {
                 assert_eq!(instances.len(), *num_instances);
                 for instance in instances.iter() {
                     transcript.common_field_element(instance)?;
                 }
             }
+            // Create multi-linear polynomials from the instance columns
             instance_polys::<_, BinaryField>(pp.num_vars, instances)
         };
 
@@ -129,6 +135,7 @@ where
         let mut witness_polys = Vec::with_capacity(pp.num_witness_polys.iter().sum());
         let mut witness_comms = Vec::with_capacity(witness_polys.len());
         let mut challenges = Vec::with_capacity(pp.num_challenges.iter().sum::<usize>() + 4);
+        // For each round, generate multi-linear polynomials from witness columns and commit 
         for (round, (num_witness_polys, num_challenges)) in pp
             .num_witness_polys
             .iter()
@@ -152,8 +159,10 @@ where
 
         // Round n
 
+        // beta is used to compress the polynomials in the lookup argument
         let beta = transcript.squeeze_challenge();
 
+        // Generate a compressed multilinear polynomial for each lookup in the vector of lookups 
         let timer = start_timer(|| format!("lookup_compressed_polys-{}", pp.lookups.len()));
         let lookup_compressed_polys = {
             let max_lookup_width = pp.lookups.iter().map(Vec::len).max().unwrap_or_default();
@@ -162,6 +171,8 @@ where
         };
         end_timer(timer);
 
+        // m and h are the polynomials generated as part of the logup GKR protocol
+        // if the lookups are f (input), t (table), m[i] is |j \in 2^{numvars} s.t f[j] = t[i] |, i.e. the number of times t[i] appears in f
         let timer = start_timer(|| format!("lookup_m_polys-{}", pp.lookups.len()));
         let lookup_m_polys = lookup_m_polys(&lookup_compressed_polys)?;
         end_timer(timer);
@@ -172,6 +183,7 @@ where
 
         let gamma = transcript.squeeze_challenge();
 
+        //h = (gamma + input)^-1 - m * (gamma + table)^-1
         let timer = start_timer(|| format!("lookup_h_polys-{}", pp.lookups.len()));
         let lookup_h_polys = lookup_h_polys(&lookup_compressed_polys, &lookup_m_polys, &gamma);
         end_timer(timer);
@@ -186,6 +198,7 @@ where
         );
         end_timer(timer);
 
+        // Commit to h polynomiald and permutation z polynomials
         let lookup_h_permutation_z_polys =
             chain![lookup_h_polys.iter(), permutation_z_polys.iter()].collect_vec();
         let lookup_h_permutation_z_comms =
@@ -196,6 +209,7 @@ where
         let alpha = transcript.squeeze_challenge();
         let y = transcript.squeeze_challenges(pp.num_vars);
 
+        // All of the polynomials in the trace committed to in the transcript
         let polys = chain![
             polys,
             pp.permutation_polys.iter().map(|(_, poly)| poly),
@@ -204,6 +218,7 @@ where
         ]
         .collect_vec();
         challenges.extend([beta, gamma, alpha]);
+        // Prove the zero check is satisfied for the expression wrt the polynomials 
         let (points, evals) = prove_zero_check(
             pp.num_instances.len(),
             &pp.expression,
@@ -226,9 +241,10 @@ where
         ]
         .collect_vec();
         let timer = start_timer(|| format!("pcs_batch_open-{}", evals.len()));
+        // Open all polynomials at the points from the zero check and give the opening proofs 
         Pcs::batch_open(&pp.pcs, polys, comms, &points, &evals, transcript)?;
         end_timer(timer);
-
+        // Proof is saved in transcript
         Ok(())
     }
 
@@ -238,6 +254,7 @@ where
         transcript: &mut impl TranscriptRead<Pcs::CommitmentChunk, F>,
         _: impl RngCore,
     ) -> Result<(), Error> {
+        //Check there is the correct amount of instances and write them to the transcript
         for (num_instances, instances) in vp.num_instances.iter().zip_eq(instances) {
             assert_eq!(instances.len(), *num_instances);
             for instance in instances.iter() {
@@ -247,6 +264,7 @@ where
 
         // Round 0..n
 
+        // For each round, read the witness commitments from the transcript and generate the challenges
         let mut witness_comms = Vec::with_capacity(vp.num_witness_polys.iter().sum());
         let mut challenges = Vec::with_capacity(vp.num_challenges.iter().sum::<usize>() + 4);
         for (num_polys, num_challenges) in
@@ -260,12 +278,14 @@ where
 
         let beta = transcript.squeeze_challenge();
 
+        // Read the commitments to the m polynomials from the lookup arguments
         let lookup_m_comms = Pcs::read_commitments(&vp.pcs, vp.num_lookups, transcript)?;
 
         // Round n+1
 
         let gamma = transcript.squeeze_challenge();
 
+        // Read the commitments to the h polynomials and permutation z polynomials
         let lookup_h_permutation_z_comms = Pcs::read_commitments(
             &vp.pcs,
             vp.num_lookups + vp.num_permutation_z_polys,
@@ -278,6 +298,7 @@ where
         let y = transcript.squeeze_challenges(vp.num_vars);
 
         challenges.extend([beta, gamma, alpha]);
+        // Verify the zero check for the constraints defined in the expression 
         let (points, evals) = verify_zero_check(
             vp.num_vars,
             &vp.expression,
@@ -299,6 +320,7 @@ where
             &lookup_h_permutation_z_comms,
         ]
         .collect_vec();
+     // Verify the opening proofs for the polynomials commitments
         Pcs::batch_verify(&vp.pcs, comms, &points, &evals, transcript)?;
 
         Ok(())
