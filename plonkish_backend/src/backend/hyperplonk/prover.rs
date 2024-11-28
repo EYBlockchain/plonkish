@@ -323,7 +323,7 @@ pub(crate) fn permutation_z_polys<F: PrimeField, R: Rotatable + From<usize>>(
 
     let usable_indices = R::from(num_vars).usable_indices();
     let first_idx = usable_indices[0];
-    // Generate polynomisals z_0, .., z_{b-1} such that z_i(X) = z_{i-1}(X) * product_i(X) and z_0(wX) = z_{b-1}(X) * product_{b-1}(X)
+    // Generate polynomisals z_0, .., z_{b-1} such that z_i(X) = z_{i-1}(X) * product_i(X) and z_0(shift(X) = z_{b-1}(X) * product_{b-1}(X)
     // The is the transpose of the permuation argument from the halo2 gitbook
     z[0][first_idx] = F::ONE;
     for chunk_idx in 1..num_chunks {
