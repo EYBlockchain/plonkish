@@ -156,7 +156,9 @@ where
 
         let coeffs = poly.coeffs();
         let bases = pp.monomial();
-        Ok(variable_base_msm(coeffs, &bases[..coeffs.len()]).into()).map(UnivariateIpaCommitment)
+        Ok(UnivariateIpaCommitment(
+            variable_base_msm(coeffs, &bases[..coeffs.len()]).into(),
+        ))
     }
 
     fn batch_commit<'a>(

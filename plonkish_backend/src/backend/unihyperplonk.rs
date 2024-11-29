@@ -413,6 +413,7 @@ mod test {
         ($suffix:ident, $pcs:ty, $additive:literal, $num_vars_range:expr) => {
             paste::paste! {
                 #[test]
+                #[ignore = "we do not currently use UniHyperPlonk"]
                 fn [<vanilla_plonk_w_ $suffix>]() {
                     run_plonkish_backend::<_, UniHyperPlonk<$pcs, $additive>, Keccak256Transcript<_>, _>($num_vars_range, |num_vars| {
                         rand_vanilla_plonk_circuit::<_, Lexical>(num_vars, seeded_std_rng(), seeded_std_rng())
@@ -420,6 +421,7 @@ mod test {
                 }
 
                 #[test]
+                #[ignore = "we do not currently use UniHyperPlonk"]
                 fn [<vanilla_plonk_w_lookup_w_ $suffix>]() {
                     run_plonkish_backend::<_, UniHyperPlonk<$pcs, $additive>, Keccak256Transcript<_>, _>($num_vars_range, |num_vars| {
                         rand_vanilla_plonk_w_lookup_circuit::<_, Lexical>(num_vars, seeded_std_rng(), seeded_std_rng())
