@@ -306,9 +306,11 @@ where
             let got = poly.evals().len() - 1;
             return Err(err_too_large_deree("commit", pp.degree(), got));
         }
-        let uni_poly = UnivariatePolynomial::monomial(poly.evals().to_vec());
 
-        UnivariateIpa::commit(pp, &uni_poly)
+        let bases = pp.monomial();
+        Ok(UnivariateIpaCommitment(
+            variable_base_msm(poly.evals(), &bases[..poly.evals().len()]).into(),
+        ))
     }
 
     fn batch_commit<'a>(
