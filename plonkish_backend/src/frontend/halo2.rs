@@ -26,6 +26,8 @@ use std::{
 pub mod circuit;
 #[cfg(test)]
 mod test;
+pub mod poseidongadget;
+
 
 pub trait CircuitExt<F: Field>: Circuit<F> {
     fn rand(_k: usize, _rng: impl RngCore) -> Self
