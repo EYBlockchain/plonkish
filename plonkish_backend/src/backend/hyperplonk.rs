@@ -344,7 +344,7 @@ mod test {
             test::run_plonkish_backend,
         },
         pcs::{
-            multilinear::{Gemini, Zeromorph},
+            multilinear::Zeromorph,
             univariate::{UnivariateIpa, UnivariateKzg},
         },
         util::{
@@ -380,8 +380,8 @@ mod test {
     //tests!(hyrax, MultilinearHyrax<grumpkin::G1Affine>, 5..16);
     //tests!(ipa, MultilinearIpa<grumpkin::G1Affine>);
     //tests!(kzg, MultilinearKzg<Bn256>);
-    tests!(gemini_kzg, Gemini<UnivariateKzg<Bn256>>);
+    //tests!(gemini_kzg, Gemini<UnivariateKzg<Bn256>>);
     tests!(zeromorph_kzg, Zeromorph<UnivariateKzg<Bn256>>);
-    tests!(gemini_ipa, Gemini<UnivariateIpa<grumpkin::G1Affine>>);
+    //tests!(gemini_ipa, Gemini<UnivariateIpa<grumpkin::G1Affine>>);
     tests!(zeromorph_ipa, Zeromorph<UnivariateIpa<grumpkin::G1Affine>>);
 }

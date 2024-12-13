@@ -1,7 +1,7 @@
 use crate::{
     pcs::{
         univariate::{
-            additive, err_too_large_deree,
+            additive, err_too_large_degree,
             ipa::{UnivariateIpa, UnivariateIpaCommitment, UnivariateIpaParam},
             validate_input,
         },
@@ -153,7 +153,7 @@ where
         let batch_k = (poly_size * batch_size).next_power_of_two().ilog2() as usize;
         let row_k = div_ceil(batch_k, 2);
         if param.row_k() < row_k {
-            return Err(err_too_large_deree("trim", param.degree(), poly_size - 1));
+            return Err(err_too_large_degree("trim", param.degree(), poly_size - 1));
         }
 
         let (ipa_pp, ipa_vp) = UnivariateIpa::trim(&param.ipa, 1 << row_k, 0)?;

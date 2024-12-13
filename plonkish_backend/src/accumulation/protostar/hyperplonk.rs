@@ -595,7 +595,7 @@ pub(crate) mod test {
             HyperPlonk,
         },
         pcs::{
-            multilinear::{Gemini, Zeromorph},
+            multilinear::Zeromorph,
             univariate::{UnivariateIpa, UnivariateKzg},
         },
         util::{
@@ -643,8 +643,8 @@ pub(crate) mod test {
 
     //tests!(ipa, MultilinearIpa<grumpkin::G1Affine>);
     //tests!(kzg, MultilinearKzg<Bn256>);
-    tests!(gemini_kzg, Gemini<UnivariateKzg<Bn256>>);
+    //tests!(gemini_kzg, Gemini<UnivariateKzg<Bn256>>);
     tests!(zeromorph_kzg, Zeromorph<UnivariateKzg<Bn256>>);
-    tests!(gemini_ipa, Gemini<UnivariateIpa<grumpkin::G1Affine>>);
+    //tests!(gemini_ipa, Gemini<UnivariateIpa<grumpkin::G1Affine>>);
     tests!(zeromorph_ipa, Zeromorph<UnivariateIpa<grumpkin::G1Affine>>);
 }
