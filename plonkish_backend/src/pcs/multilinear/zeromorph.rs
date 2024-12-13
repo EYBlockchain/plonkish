@@ -3,7 +3,7 @@ use crate::{
     pcs::{
         multilinear::{additive, quotients},
         univariate::{
-            err_too_large_deree, UnivariateIpa, UnivariateIpaCommitment, UnivariateKzg,
+            err_too_large_degree, UnivariateIpa, UnivariateIpaCommitment, UnivariateKzg,
             UnivariateKzgProverParam, UnivariateKzgVerifierParam,
         },
         Evaluation, Point, PolynomialCommitmentScheme,
@@ -112,7 +112,7 @@ where
     fn commit(pp: &Self::ProverParam, poly: &Self::Polynomial) -> Result<Self::Commitment, Error> {
         if pp.degree() + 1 < poly.evals().len() {
             let got = poly.evals().len() - 1;
-            return Err(err_too_large_deree("commit", pp.degree(), got));
+            return Err(err_too_large_degree("commit", pp.degree(), got));
         }
 
         Ok(UnivariateKzg::commit_monomial(&pp.commit_pp, poly.evals()))
@@ -139,7 +139,7 @@ where
         let num_vars = poly.num_vars();
         if pp.degree() + 1 < poly.evals().len() {
             let got = poly.evals().len() - 1;
-            return Err(err_too_large_deree("open", pp.degree(), got));
+            return Err(err_too_large_degree("open", pp.degree(), got));
         }
 
         if cfg!(feature = "sanity-check") {
@@ -304,7 +304,7 @@ where
     fn commit(pp: &Self::ProverParam, poly: &Self::Polynomial) -> Result<Self::Commitment, Error> {
         if pp.degree() + 1 < poly.evals().len() {
             let got = poly.evals().len() - 1;
-            return Err(err_too_large_deree("commit", pp.degree(), got));
+            return Err(err_too_large_degree("commit", pp.degree(), got));
         }
 
         let bases = pp.monomial();
@@ -334,7 +334,7 @@ where
         let num_vars = poly.num_vars();
         if pp.degree() + 1 < poly.evals().len() {
             let got = poly.evals().len() - 1;
-            return Err(err_too_large_deree("open", pp.degree(), got));
+            return Err(err_too_large_degree("open", pp.degree(), got));
         }
 
         if cfg!(feature = "sanity-check") {
