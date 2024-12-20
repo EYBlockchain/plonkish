@@ -5,7 +5,7 @@ use crate::{
     pcs::{
         multilinear::additive,
         univariate::{
-            err_too_large_degree, ipa::UnivariateIpa, UnivariateIpaCommitment, UnivariateKzg,
+            err_too_large_deree, ipa::UnivariateIpa, UnivariateIpaCommitment, UnivariateKzg,
             UnivariateKzgCommitment,
         },
         Evaluation, Point, PolynomialCommitmentScheme,
@@ -58,7 +58,7 @@ where
     fn commit(pp: &Self::ProverParam, poly: &Self::Polynomial) -> Result<Self::Commitment, Error> {
         if pp.degree() + 1 < poly.evals().len() {
             let got = poly.evals().len() - 1;
-            return Err(err_too_large_degree("commit", pp.degree(), got));
+            return Err(err_too_large_deree("commit", pp.degree(), got));
         }
 
         Ok(UnivariateKzg::commit_monomial(pp, poly.evals()))
@@ -85,7 +85,7 @@ where
         let num_vars = point.len();
         if pp.degree() + 1 < poly.evals().len() {
             let got = poly.evals().len() - 1;
-            return Err(err_too_large_degree("open", pp.degree(), got));
+            return Err(err_too_large_deree("open", pp.degree(), got));
         }
 
         if cfg!(feature = "sanity-check") {
@@ -254,13 +254,9 @@ where
     fn commit(pp: &Self::ProverParam, poly: &Self::Polynomial) -> Result<Self::Commitment, Error> {
         if pp.degree() + 1 < poly.evals().len() {
             let got = poly.evals().len() - 1;
-            return Err(err_too_large_degree("commit", pp.degree(), got));
+            return Err(err_too_large_deree("commit", pp.degree(), got));
         }
         let uni_poly = UnivariatePolynomial::monomial(poly.evals().to_vec());
-
-        if uni_poly.coeffs().is_empty() {
-            return Ok(UnivariateIpaCommitment::<C>::default());
-        }
 
         UnivariateIpa::commit(pp, &uni_poly)
     }
@@ -286,7 +282,7 @@ where
         let num_vars = point.len();
         if pp.degree() + 1 < poly.evals().len() {
             let got = poly.evals().len() - 1;
-            return Err(err_too_large_degree("open", pp.degree(), got));
+            return Err(err_too_large_deree("open", pp.degree(), got));
         }
 
         if cfg!(feature = "sanity-check") {
@@ -443,14 +439,12 @@ mod test {
     type GemIpaPcs = Gemini<UnivariateIpa<grumpkin::G1Affine>>;
 
     #[test]
-    #[ignore = "we do not currently use gemini"]
     fn commit_open_verify() {
         run_commit_open_verify::<_, GemKzgPcs, Keccak256Transcript<_>>();
         run_commit_open_verify::<_, GemIpaPcs, Keccak256Transcript<_>>();
     }
 
     #[test]
-    #[ignore = "we do not currently use gemini"]
     fn batch_commit_open_verify() {
         run_batch_commit_open_verify::<_, GemKzgPcs, Keccak256Transcript<_>>();
         run_batch_commit_open_verify::<_, GemIpaPcs, Keccak256Transcript<_>>();

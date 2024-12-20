@@ -324,13 +324,11 @@ mod test {
     type Pcs = MultilinearHyrax<Affine>;
 
     #[test]
-    #[ignore = "we do not currently use hyrax"]
     fn commit_open_verify() {
         run_commit_open_verify::<_, Pcs, Keccak256Transcript<_>>();
     }
 
     #[test]
-    #[ignore = "we do not currently use hyrax"]
     fn batch_commit_open_verify() {
         run_batch_commit_open_verify::<_, Pcs, Keccak256Transcript<_>>();
     }

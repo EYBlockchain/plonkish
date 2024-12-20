@@ -1,6 +1,6 @@
 use crate::{
     pcs::{
-        univariate::{additive, err_too_large_degree, monomial_g_to_lagrange_g, validate_input},
+        univariate::{additive, err_too_large_deree, monomial_g_to_lagrange_g, validate_input},
         Additive, Evaluation, Point, PolynomialCommitmentScheme,
     },
     poly::univariate::{UnivariateBasis::*, UnivariatePolynomial},
@@ -252,7 +252,7 @@ where
         assert!(poly_size.is_power_of_two());
 
         if param.monomial_g1.len() < poly_size {
-            return Err(err_too_large_degree("trim", param.degree(), poly_size - 1));
+            return Err(err_too_large_deree("trim", param.degree(), poly_size - 1));
         }
 
         let monomial_g1 = param.monomial_g1[..poly_size].to_vec();

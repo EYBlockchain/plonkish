@@ -135,7 +135,7 @@ where
         let mut witness_polys = Vec::with_capacity(pp.num_witness_polys.iter().sum());
         let mut witness_comms = Vec::with_capacity(witness_polys.len());
         let mut challenges = Vec::with_capacity(pp.num_challenges.iter().sum::<usize>() + 4);
-        // For each round, generate multi-linear polynomials from witness columns and commit
+        // For each round, generate multi-linear polynomials from witness columns and commit 
         for (round, (num_witness_polys, num_challenges)) in pp
             .num_witness_polys
             .iter()
@@ -162,7 +162,7 @@ where
         // beta is used to compress the polynomials in the lookup argument
         let beta = transcript.squeeze_challenge();
 
-        // Generate a compressed multilinear polynomial for each lookup in the vector of lookups
+        // Generate a compressed multilinear polynomial for each lookup in the vector of lookups 
         let timer = start_timer(|| format!("lookup_compressed_polys-{}", pp.lookups.len()));
         let lookup_compressed_polys = {
             let max_lookup_width = pp.lookups.iter().map(Vec::len).max().unwrap_or_default();
@@ -218,7 +218,7 @@ where
         ]
         .collect_vec();
         challenges.extend([beta, gamma, alpha]);
-        // Prove the zero check is satisfied for the expression wrt the polynomials
+        // Prove the zero check is satisfied for the expression wrt the polynomials 
         let (points, evals) = prove_zero_check(
             pp.num_instances.len(),
             &pp.expression,
@@ -241,7 +241,7 @@ where
         ]
         .collect_vec();
         let timer = start_timer(|| format!("pcs_batch_open-{}", evals.len()));
-        // Open all polynomials at the points from the zero check and give the opening proofs
+        // Open all polynomials at the points from the zero check and give the opening proofs 
         Pcs::batch_open(&pp.pcs, polys, comms, &points, &evals, transcript)?;
         end_timer(timer);
         // Proof is saved in transcript
@@ -298,7 +298,7 @@ where
         let y = transcript.squeeze_challenges(vp.num_vars);
 
         challenges.extend([beta, gamma, alpha]);
-        // Verify the zero check for the constraints defined in the expression
+        // Verify the zero check for the constraints defined in the expression 
         let (points, evals) = verify_zero_check(
             vp.num_vars,
             &vp.expression,
@@ -320,7 +320,7 @@ where
             &lookup_h_permutation_z_comms,
         ]
         .collect_vec();
-        // Verify the opening proofs for the polynomials commitments
+     // Verify the opening proofs for the polynomials commitments
         Pcs::batch_verify(&vp.pcs, comms, &points, &evals, transcript)?;
 
         Ok(())
@@ -344,14 +344,21 @@ mod test {
             test::run_plonkish_backend,
         },
         pcs::{
-            multilinear::Zeromorph,
-            univariate::{UnivariateIpa, UnivariateKzg},
+            multilinear::{
+                Gemini, MultilinearBrakedown, MultilinearHyrax, MultilinearIpa, MultilinearKzg,
+                Zeromorph,
+            },
+            univariate::UnivariateKzg,
         },
         util::{
-            expression::rotate::BinaryField, test::seeded_std_rng, transcript::Keccak256Transcript,
+            code::BrakedownSpec6, expression::rotate::BinaryField, hash::Keccak256,
+            test::seeded_std_rng, transcript::Keccak256Transcript,
         },
     };
-    use halo2_curves::{bn256::Bn256, grumpkin};
+    use halo2_curves::{
+        bn256::{self, Bn256},
+        grumpkin,
+    };
 
     macro_rules! tests {
         ($suffix:ident, $pcs:ty, $num_vars_range:expr) => {
@@ -376,12 +383,10 @@ mod test {
         };
     }
 
-    //tests!(brakedown, MultilinearBrakedown<bn256::Fr, Keccak256, BrakedownSpec6>);
-    //tests!(hyrax, MultilinearHyrax<grumpkin::G1Affine>, 5..16);
-    //tests!(ipa, MultilinearIpa<grumpkin::G1Affine>);
-    //tests!(kzg, MultilinearKzg<Bn256>);
-    //tests!(gemini_kzg, Gemini<UnivariateKzg<Bn256>>);
+    tests!(brakedown, MultilinearBrakedown<bn256::Fr, Keccak256, BrakedownSpec6>);
+    tests!(hyrax, MultilinearHyrax<grumpkin::G1Affine>, 5..16);
+    tests!(ipa, MultilinearIpa<grumpkin::G1Affine>);
+    tests!(kzg, MultilinearKzg<Bn256>);
+    tests!(gemini_kzg, Gemini<UnivariateKzg<Bn256>>);
     tests!(zeromorph_kzg, Zeromorph<UnivariateKzg<Bn256>>);
-    //tests!(gemini_ipa, Gemini<UnivariateIpa<grumpkin::G1Affine>>);
-    tests!(zeromorph_ipa, Zeromorph<UnivariateIpa<grumpkin::G1Affine>>);
 }
