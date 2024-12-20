@@ -1,6 +1,6 @@
 use crate::{
     pcs::{
-        univariate::{additive, err_too_large_deree, validate_input},
+        univariate::{additive, err_too_large_degree, validate_input},
         Additive, Evaluation, Point, PolynomialCommitmentScheme,
     },
     poly::{
@@ -136,7 +136,7 @@ where
         let k = poly_size.ilog2() as usize;
 
         if param.monomial.len() < poly_size {
-            return Err(err_too_large_deree("trim", param.degree(), poly_size - 1));
+            return Err(err_too_large_degree("trim", param.degree(), poly_size - 1));
         }
 
         let monomial = param.monomial[..poly_size].to_vec();
@@ -156,7 +156,9 @@ where
 
         let coeffs = poly.coeffs();
         let bases = pp.monomial();
-        Ok(variable_base_msm(coeffs, &bases[..coeffs.len()]).into()).map(UnivariateIpaCommitment)
+        Ok(UnivariateIpaCommitment(
+            variable_base_msm(coeffs, &bases[..coeffs.len()]).into(),
+        ))
     }
 
     fn batch_commit<'a>(
