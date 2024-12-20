@@ -20,6 +20,9 @@ pub(crate) mod test_vectors;
 mod p128pow5t3;
 pub use p128pow5t3::P128Pow5T3;
 
+mod bn256param;
+pub use bn256param::BN256param;
+
 use grain::SboxType;
 
 /// The type used to hold permutation state.

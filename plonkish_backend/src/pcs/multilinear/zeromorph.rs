@@ -379,7 +379,6 @@ where
 
         let comm = if cfg!(feature = "sanity-check") {
             assert_eq!(f.evaluate(&x), C::Scalar::ZERO);
-
             UnivariateIpa::<C>::commit(pp, &f)?
         } else {
             Default::default()

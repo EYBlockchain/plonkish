@@ -24,6 +24,7 @@ impl<F: PrimeField> Evaluations<F> {
         Self(vec![F::ZERO; degree + 1])
     }
 
+    // All points between 0 and degree +1
     fn points(degree: usize) -> Vec<F> {
         steps(F::ZERO).take(degree + 1).collect()
     }

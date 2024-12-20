@@ -29,6 +29,7 @@ pub struct Pow5Config<F: Field, const WIDTH: usize, const RATE: usize> {
 
     half_full_rounds: usize,
     half_partial_rounds: usize,
+    // alpha represents exponent in s-box
     alpha: [u64; 4],
     round_constants: Vec<[F; WIDTH]>,
     m_reg: Mds<F, WIDTH>,
@@ -589,27 +590,46 @@ mod tests {
     use halo2_proofs::{
         circuit::{Layouter, SimpleFloorPlanner, Value},
         dev::MockProver,
-        plonk::{Circuit, ConstraintSystem, Error},
+        plonk::{Circuit, ConstraintSystem, Error,keygen_vk,keygen_pk,create_proof,verify_proof},
+        poly::kzg::{commitment::{KZGCommitmentScheme,ParamsKZG},multiopen::{ProverGWC, VerifierGWC},strategy::SingleStrategy,},
+        transcript::{Blake2bRead, Blake2bWrite, Challenge255, TranscriptReadBuffer, TranscriptWriterBuffer},
     };
     use halo2_curves::pasta::{pallas, Fp};
+    use halo2_curves::bn256::{Bn256,Fr,Fq};
+    use halo2_curves::grumpkin;
     use rand::rngs::OsRng;
 
     use super::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
     use crate::frontend::halo2::poseidongadget::poseidon::{
-        primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, Spec},
+        primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, BN256param as newParam, Spec},
         Hash,
     };
     use std::convert::TryInto;
     use std::marker::PhantomData;
 
-    struct PermuteCircuit<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize>(
+    use crate::backend::{
+        hyperplonk::HyperPlonk,
+        PlonkishCircuit,
+        PlonkishBackend,
+    };
+    
+    use crate::{
+        frontend::halo2::{CircuitExt,Halo2Circuit},
+        pcs::{multilinear::{MultilinearKzg,Zeromorph},univariate::{UnivariateKzg,UnivariateIpa}},
+        util::{
+            transcript::{InMemoryTranscript,Keccak256Transcript},
+            test::seeded_std_rng,
+        }
+    };
+
+    struct PermuteCircuit<S: Spec<Fr, WIDTH, RATE>, const WIDTH: usize, const RATE: usize>(
         PhantomData<S>,
     );
 
-    impl<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize> Circuit<Fp>
+    impl<S: Spec<Fr, WIDTH, RATE>, const WIDTH: usize, const RATE: usize> Circuit<Fr>
         for PermuteCircuit<S, WIDTH, RATE>
     {
-        type Config = Pow5Config<Fp, WIDTH, RATE>;
+        type Config = Pow5Config<Fr, WIDTH, RATE>;
         type FloorPlanner = SimpleFloorPlanner;
         #[cfg(feature = "circuit-params")]
         type Params = ();
@@ -618,7 +638,7 @@ mod tests {
             PermuteCircuit::<S, WIDTH, RATE>(PhantomData)
         }
 
-        fn configure(meta: &mut ConstraintSystem<Fp>) -> Pow5Config<Fp, WIDTH, RATE> {
+        fn configure(meta: &mut ConstraintSystem<Fr>) -> Pow5Config<Fr, WIDTH, RATE> {
             let state = (0..WIDTH).map(|_| meta.advice_column()).collect::<Vec<_>>();
             let partial_sbox = meta.advice_column();
 
@@ -636,14 +656,14 @@ mod tests {
 
         fn synthesize(
             &self,
-            config: Pow5Config<Fp, WIDTH, RATE>,
-            mut layouter: impl Layouter<Fp>,
+            config: Pow5Config<Fr, WIDTH, RATE>,
+            mut layouter: impl Layouter<Fr>,
         ) -> Result<(), Error> {
             let initial_state = layouter.assign_region(
                 || "prepare initial state",
                 |mut region| {
                     let state_word = |i: usize| {
-                        let value = Value::known(Fp::from(i as u64));
+                        let value = Value::known(Fr::from(i as u64));
                         let var = region.assign_advice(
                             || format!("load state_{}", i),
                             config.state[i],
@@ -660,7 +680,7 @@ mod tests {
 
             let chip = Pow5Chip::construct(config.clone());
             let final_state = <Pow5Chip<_, WIDTH, RATE> as PoseidonInstructions<
-                Fp,
+                Fr,
                 S,
                 WIDTH,
                 RATE,
@@ -668,7 +688,7 @@ mod tests {
 
             // For the purpose of this test, compute the real final state inline.
             let mut expected_final_state = (0..WIDTH)
-                .map(|idx| Fp::from(idx as u64))
+                .map(|idx| Fr::from(idx as u64))
                 .collect::<Vec<_>>()
                 .try_into()
                 .unwrap();
@@ -678,7 +698,6 @@ mod tests {
                 &mds,
                 &round_constants,
             );
-
             layouter.assign_region(
                 || "constrain final state",
                 |mut region| {
@@ -702,12 +721,100 @@ mod tests {
         }
     }
 
-    #[test]
+    impl CircuitExt<Fr> for PermuteCircuit::<newParam<6,5,0>, 6, 5> {
+
+        fn instances(&self) -> Vec<Vec<Fr>> {
+            /*let mut expected_final_state = (0..7)
+                .map(|idx| Fq::from(idx as u64))
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap();*/
+            Vec::new()
+        }
+    }
+
+   /*  #[test]
     fn poseidon_permute() {
         let k = 6;
         let circuit = PermuteCircuit::<OrchardNullifier, 3, 2>(PhantomData);
         let prover = MockProver::run::<_, true>(k, &circuit, vec![]).unwrap();
         assert_eq!(prover.verify(), Ok(()))
+    }*/
+    #[test]
+    fn poseidon_permute_new_param() {
+        type Pb = HyperPlonk<Zeromorph<UnivariateKzg<Bn256>>>;
+        let circuit = Halo2Circuit::new::<Pb>(6, PermuteCircuit::<newParam<6,5,0>, 6, 5>(PhantomData));
+        let param = Pb::setup(&circuit.circuit_info().unwrap(), seeded_std_rng()).unwrap();
+        let (pp, vp) = Pb::preprocess(&param, &circuit.circuit_info().unwrap()).unwrap();
+        let proof = {
+                let mut transcript = Keccak256Transcript::new(());
+                Pb::prove(&pp, &circuit, &mut transcript, seeded_std_rng()).unwrap();
+                transcript.into_proof()
+            };
+        let result = {
+            let mut transcript = Keccak256Transcript::from_proof((), proof.as_slice());
+            Pb::verify(&vp, circuit.instances(), &mut transcript, seeded_std_rng())
+        };
+        assert_eq!(result, Ok(()))
+        //assert!(false)
+
+        /*let k =6;
+        let circuit = PermuteCircuit::<newParam<7,6,0>, 7, 6>(PhantomData);
+        let prover = MockProver::run::<_, false>(k, &circuit, vec![]).unwrap();
+        //assert_eq!(prover.verify(), Ok(()))
+        prover.assert_satisfied()*/
+
+        /*let k =6;
+        let circuit = PermuteCircuit::<newParam<7,6,0>, 7, 6>(PhantomData);
+        let prover = MockProver::run::<_, true>(k, &circuit, vec![]).unwrap();
+        //assert_eq!(prover.verify(), Ok(()))
+        prover.assert_satisfied()*/
+
+        /*let k =6;
+        let params = ParamsKZG::<Bn256>::setup(k, seeded_std_rng());
+        let circuit = PermuteCircuit::<newParam<7,6,0>, 7, 6>(PhantomData);
+        let vk =
+            keygen_vk::<_, _, _, true>(&params, &circuit).expect("keygen_vk should not fail");
+        let pk = keygen_pk::<_, _, _, true>(&params, vk, &circuit)
+            .expect("keygen_pk should not fail");
+        let instances_vec: Vec<&[Fr]> = Vec::new();
+        let instances: &[&[Fr]] = &instances_vec;
+        let mut transcript = Blake2bWrite::<_, _, Challenge255<_>>::init(vec![]);
+        create_proof::<
+            KZGCommitmentScheme<Bn256>,
+            ProverGWC<'_, Bn256>,
+            _,
+            _,
+            _,
+            _,
+            true,
+        >(
+            &params,
+            &pk,
+            &[circuit],
+            &[instances],
+            seeded_std_rng(),
+            &mut transcript,
+        )
+        .expect("prover should not fail");
+        let proof = transcript.finalize();
+        let strategy = SingleStrategy::new(&params);
+        let mut transcript = Blake2bRead::<_, _, Challenge255<_>>::init(&proof[..]);
+        let result = verify_proof::<
+            KZGCommitmentScheme<Bn256>,
+            VerifierGWC<'_, Bn256>,
+            _,
+            _,
+            SingleStrategy<'_, Bn256>,
+            true,
+        >(
+            &params,
+            pk.get_vk(),
+            strategy,
+            &[instances],
+            &mut transcript
+        ).is_ok();
+        assert!(result)*/
     }
 
     struct HashCircuit<
@@ -880,4 +987,5 @@ mod tests {
             .render(6, &circuit, &root)
             .unwrap();
     }
+
 }
