@@ -721,7 +721,7 @@ mod tests {
         }
     }
 
-    impl CircuitExt<Fr> for PermuteCircuit::<newParam<6,5,0>, 6, 5> {
+    impl CircuitExt<Fr> for PermuteCircuit::<newParam<5,4,0>, 5, 4> {
 
         fn instances(&self) -> Vec<Vec<Fr>> {
             /*let mut expected_final_state = (0..7)
@@ -743,7 +743,7 @@ mod tests {
     #[test]
     fn poseidon_permute_new_param() {
         type Pb = HyperPlonk<Zeromorph<UnivariateKzg<Bn256>>>;
-        let circuit = Halo2Circuit::new::<Pb>(6, PermuteCircuit::<newParam<6,5,0>, 6, 5>(PhantomData));
+        let circuit = Halo2Circuit::new::<Pb>(6, PermuteCircuit::<newParam<5,4,0>, 5, 4>(PhantomData));
         let param = Pb::setup(&circuit.circuit_info().unwrap(), seeded_std_rng()).unwrap();
         let (pp, vp) = Pb::preprocess(&param, &circuit.circuit_info().unwrap()).unwrap();
         let proof = {
