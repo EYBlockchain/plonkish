@@ -259,6 +259,7 @@ pub(super) fn lookup_h_poly<F: PrimeField + Hash>(
 
 // Generates equality constraint polynomials
 pub(crate) fn permutation_z_polys<F: PrimeField, R: Rotatable + From<usize>>(
+    chunk_size: usize,
     num_chunks: usize,
     permutation_polys: &[(usize, MultilinearPolynomial<F>)],
     polys: &[impl Borrow<MultilinearPolynomial<F>>],
@@ -269,7 +270,6 @@ pub(crate) fn permutation_z_polys<F: PrimeField, R: Rotatable + From<usize>>(
         return Vec::new();
     }
     // permutation polys are split into chunks due to maximum constraint degree
-    let chunk_size = div_ceil(permutation_polys.len(), num_chunks);
     let polys = polys.iter().map(Borrow::borrow).collect_vec();
     let num_vars = polys[0].num_vars();
 
@@ -384,7 +384,6 @@ pub(crate) fn prove_sum_check<F: PrimeField>(
         sum,
         transcript,
     )?;
-
     // Set of all polynomial queries in the expression
     let pcs_query = pcs_query(expression, num_instance_poly);
     let point_offset = point_offset(&pcs_query);
