@@ -26,7 +26,6 @@ use std::{
 pub mod circuit;
 #[cfg(test)]
 mod test;
-pub mod poseidongadget;
 
 
 pub trait CircuitExt<F: Field>: Circuit<F> {

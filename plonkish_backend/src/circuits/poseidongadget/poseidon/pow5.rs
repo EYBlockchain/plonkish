@@ -14,7 +14,7 @@ use super::{
     primitives::{Absorbing, Domain, Mds, Spec, Squeezing, State},
     PaddedWord, PoseidonInstructions, PoseidonSpongeInstructions,
 };
-use crate::frontend::halo2::poseidongadget::utilities::Var;
+use crate::circuits::poseidongadget::utilities::Var;
 
 /// Configuration for a [`Pow5Chip`].
 #[derive(Clone, Debug)]
@@ -600,7 +600,7 @@ mod tests {
     use rand::rngs::OsRng;
 
     use super::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
-    use crate::frontend::halo2::poseidongadget::poseidon::{
+    use crate::circuits::poseidongadget::poseidon::{
         primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, BN256param as newParam, Spec},
         Hash,
     };
@@ -948,7 +948,7 @@ mod tests {
 
     #[test]
     fn hash_test_vectors() {
-        for tv in crate::frontend::halo2::poseidongadget::poseidon::primitives::test_vectors::fp::hash() {
+        for tv in crate::circuits::poseidongadget::poseidon::primitives::test_vectors::fp::hash() {
             let message = [
                 pallas::Base::from_repr(tv.input[0]).unwrap(),
                 pallas::Base::from_repr(tv.input[1]).unwrap(),

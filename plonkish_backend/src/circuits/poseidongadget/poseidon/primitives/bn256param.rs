@@ -2,7 +2,7 @@
 use halo2_proofs::arithmetic::Field;
 use super::{Mds, Spec};
 use halo2_curves::bn256::Fr;
-use crate::frontend::halo2::poseidongadget::poseidon::primitives::generate_constants;
+use crate::circuits::poseidongadget::poseidon::primitives::generate_constants;
 
 // To do rewrite this below
 /// Poseidon-128 using the $x^5$ S-box, with a width of 3 field elements, and the
@@ -55,7 +55,7 @@ impl<const T: usize, const R: usize, const SECURE_MDS: usize > Spec<Fr, T, R> fo
 #[cfg(test)]
 mod tests {
     #![allow(dead_code)]
-    use crate::frontend::halo2::poseidongadget::poseidon::primitives::{
+    use crate::circuits::poseidongadget::poseidon::primitives::{
         generate_constants, permute, ConstantLength, Hash, Mds, Spec,
     };
     use ff::PrimeField;
