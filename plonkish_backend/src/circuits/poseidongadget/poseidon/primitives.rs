@@ -9,16 +9,8 @@ use ff::FromUniformBytes;
 use ff::PrimeField;
 use halo2_proofs::arithmetic::Field;
 
-pub(crate) mod fp;
-pub(crate) mod fq;
 pub(crate) mod grain;
 pub(crate) mod mds;
-
-#[cfg(test)]
-pub(crate) mod test_vectors;
-
-mod p128pow5t3;
-pub use p128pow5t3::P128Pow5T3;
 
 mod bn256param;
 pub use bn256param::BN256param;
@@ -389,10 +381,11 @@ impl<F: PrimeField, S: Spec<F, T, RATE>, const T: usize, const RATE: usize, cons
 
 #[cfg(test)]
 mod tests {
-    use super::{permute, ConstantLength, Hash, P128Pow5T3 as OrchardNullifier, Spec};
+    use super::{permute, ConstantLength, Hash, Spec};
     use ff::PrimeField;
     use halo2_curves::pasta::pallas;
 
+    /*#[ignore]
     #[test]
     fn orchard_spec_equivalence() {
         let message = [pallas::Base::from(6), pallas::Base::from(42)];
@@ -407,5 +400,5 @@ mod tests {
         let mut state = [message[0], message[1], pallas::Base::from_u128(2 << 64)];
         permute::<_, OrchardNullifier, 3, 2>(&mut state, &mds, &round_constants);
         assert_eq!(state[0], result);
-    }
+    }*/
 }

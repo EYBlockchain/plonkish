@@ -601,7 +601,7 @@ mod tests {
 
     use super::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
     use crate::circuits::poseidongadget::poseidon::{
-        primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, BN256param as newParam, Spec},
+        primitives::{self as poseidon, ConstantLength, BN256param as newParam, Spec},
         Hash,
     };
     use std::convert::TryInto;
@@ -910,6 +910,7 @@ mod tests {
         }
     }
 
+    /*#[ignore]
     #[test]
     fn poseidon_hash() {
         let rng = OsRng;
@@ -928,6 +929,7 @@ mod tests {
         assert_eq!(prover.verify(), Ok(()))
     }
 
+    #[ignore]
     #[test]
     fn poseidon_hash_longer_input() {
         let rng = OsRng;
@@ -946,6 +948,7 @@ mod tests {
         assert_eq!(prover.verify(), Ok(()))
     }
 
+    #[ignore]
     #[test]
     fn hash_test_vectors() {
         for tv in crate::circuits::poseidongadget::poseidon::primitives::test_vectors::fp::hash() {
@@ -986,6 +989,6 @@ mod tests {
         halo2_proofs::dev::CircuitLayout::default()
             .render(6, &circuit, &root)
             .unwrap();
-    }
+    }*/
 
 }
