@@ -191,7 +191,7 @@ where
 
         let timer = start_timer(|| format!("permutation_z_polys-{}", pp.permutation_polys.len()));
         let permutation_z_polys = permutation_z_polys::<_, BinaryField>(
-            pp.max_degree -1,
+            pp.max_degree - 1,
             pp.num_permutation_z_polys,
             &pp.permutation_polys,
             &polys,
