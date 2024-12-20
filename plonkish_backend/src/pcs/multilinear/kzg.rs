@@ -241,9 +241,8 @@ where
     fn commit(pp: &Self::ProverParam, poly: &Self::Polynomial) -> Result<Self::Commitment, Error> {
         validate_input("commit", pp.num_vars(), [poly], None)?;
 
-        Ok(MultilinearKzgCommitment(
-            variable_base_msm(poly.evals(), pp.eq(poly.num_vars())).into(),
-        ))
+        Ok(variable_base_msm(poly.evals(), pp.eq(poly.num_vars())).into())
+            .map(MultilinearKzgCommitment)
     }
 
     fn batch_commit<'a>(
@@ -376,13 +375,11 @@ mod test {
     type Pcs = MultilinearKzg<Bn256>;
 
     #[test]
-    #[ignore = "we do not currently use multilinear KZG"]
     fn commit_open_verify() {
         run_commit_open_verify::<_, Pcs, Keccak256Transcript<_>>();
     }
 
     #[test]
-    #[ignore = "we do not currently use multilinear KZG"]
     fn batch_commit_open_verify() {
         run_batch_commit_open_verify::<_, Pcs, Keccak256Transcript<_>>();
     }

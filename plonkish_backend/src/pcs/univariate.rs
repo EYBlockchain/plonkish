@@ -48,7 +48,7 @@ fn validate_input<'a, F: Field>(
         match poly.basis() {
             Monomial => {
                 if param_degree < poly.degree() {
-                    return Err(err_too_large_degree(function, param_degree, poly.degree()));
+                    return Err(err_too_large_deree(function, param_degree, poly.degree()));
                 }
             }
             Lagrange => {
@@ -61,7 +61,7 @@ fn validate_input<'a, F: Field>(
     Ok(())
 }
 
-pub(super) fn err_too_large_degree(function: &str, upto: usize, got: usize) -> Error {
+pub(super) fn err_too_large_deree(function: &str, upto: usize, got: usize) -> Error {
     Error::InvalidPcsParam(if function == "trim" {
         format!("Too large degree to {function} (param supports degree up to {upto} but got {got})")
     } else {

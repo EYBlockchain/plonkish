@@ -1,0 +1,14 @@
+// This crate been taking from privacy scaling explorations crate: https://github.com/privacy-scaling-explorations/poseidon-gadget/tree/main/src
+//! This crate provides the poseidon gadget for use with `halo2_proofs`.
+//! This gadget has been extracted from zcash's halo2_gadgets:
+//! https://github.com/zcash/halo2/tree/main/halo2_gadgets
+
+#![cfg_attr(docsrs, feature(doc_cfg))]
+// Catch documentation errors caused by code changes.
+#![deny(rustdoc::broken_intra_doc_links)]
+#![deny(missing_debug_implementations)]
+#![deny(missing_docs)]
+#![deny(unsafe_code)]
+
+pub mod poseidon;
+pub mod utilities;

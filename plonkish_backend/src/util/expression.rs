@@ -118,7 +118,7 @@ impl<F: Clone> Expression<F> {
             )
         };
         match self {
-            Expression::Constant(scalar) => constant(scalar.clone()),
+            Expression::Constant(scalar) => constant(scalar.clone()),   
             Expression::CommonPolynomial(poly) => common_poly(*poly),
             Expression::Polynomial(query) => poly(*query),
             Expression::Challenge(index) => challenge(*index),

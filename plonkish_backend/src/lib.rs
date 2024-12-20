@@ -2,6 +2,7 @@
 
 pub mod accumulation;
 pub mod backend;
+pub mod circuits;
 pub mod frontend;
 pub mod pcs;
 pub mod piop;

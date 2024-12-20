@@ -205,7 +205,9 @@ fn poly<'a, F: PrimeField>(
 ) -> &'a MultilinearPolynomial<F> {
     match expr {
         Expression::CommonPolynomial(CommonPolynomial::EqXY(idx)) => &state.eq_xys[*idx],
-        Expression::Polynomial(query) if query.rotation() == Rotation::cur() => &state.polys[query],
+        Expression::Polynomial(query) if query.rotation() == Rotation::cur() => {
+            &state.polys[&query]
+        }
         _ => unimplemented!(),
     }
 }

@@ -3,7 +3,7 @@ use crate::{
     pcs::{
         multilinear::{additive, quotients},
         univariate::{
-            err_too_large_degree, UnivariateIpa, UnivariateIpaCommitment, UnivariateKzg,
+            err_too_large_deree, UnivariateIpa, UnivariateIpaCommitment, UnivariateKzg,
             UnivariateKzgProverParam, UnivariateKzgVerifierParam,
         },
         Evaluation, Point, PolynomialCommitmentScheme,
@@ -112,7 +112,7 @@ where
     fn commit(pp: &Self::ProverParam, poly: &Self::Polynomial) -> Result<Self::Commitment, Error> {
         if pp.degree() + 1 < poly.evals().len() {
             let got = poly.evals().len() - 1;
-            return Err(err_too_large_degree("commit", pp.degree(), got));
+            return Err(err_too_large_deree("commit", pp.degree(), got));
         }
 
         Ok(UnivariateKzg::commit_monomial(&pp.commit_pp, poly.evals()))
@@ -139,7 +139,7 @@ where
         let num_vars = poly.num_vars();
         if pp.degree() + 1 < poly.evals().len() {
             let got = poly.evals().len() - 1;
-            return Err(err_too_large_degree("open", pp.degree(), got));
+            return Err(err_too_large_deree("open", pp.degree(), got));
         }
 
         if cfg!(feature = "sanity-check") {
@@ -304,13 +304,11 @@ where
     fn commit(pp: &Self::ProverParam, poly: &Self::Polynomial) -> Result<Self::Commitment, Error> {
         if pp.degree() + 1 < poly.evals().len() {
             let got = poly.evals().len() - 1;
-            return Err(err_too_large_degree("commit", pp.degree(), got));
+            return Err(err_too_large_deree("commit", pp.degree(), got));
         }
+        let uni_poly = UnivariatePolynomial::monomial(poly.evals().to_vec());
 
-        let bases = pp.monomial();
-        Ok(UnivariateIpaCommitment(
-            variable_base_msm(poly.evals(), &bases[..poly.evals().len()]).into(),
-        ))
+        UnivariateIpa::commit(pp, &uni_poly)
     }
 
     fn batch_commit<'a>(
@@ -334,7 +332,7 @@ where
         let num_vars = poly.num_vars();
         if pp.degree() + 1 < poly.evals().len() {
             let got = poly.evals().len() - 1;
-            return Err(err_too_large_degree("open", pp.degree(), got));
+            return Err(err_too_large_deree("open", pp.degree(), got));
         }
 
         if cfg!(feature = "sanity-check") {
@@ -381,7 +379,6 @@ where
 
         let comm = if cfg!(feature = "sanity-check") {
             assert_eq!(f.evaluate(&x), C::Scalar::ZERO);
-
             UnivariateIpa::<C>::commit(pp, &f)?
         } else {
             Default::default()

@@ -371,7 +371,6 @@ mod test {
 
     #[rustfmt::skip]
     #[test]
-    #[ignore = "we do not currently use brakedown"]
     fn spec_127_bit_field() {
         assert_spec_correct::<BrakedownSpec1>(127, 0.02,  6, 33, 13265, 2);
         assert_spec_correct::<BrakedownSpec2>(127, 0.03,  7, 26,  8768, 2);
@@ -383,7 +382,6 @@ mod test {
 
     #[rustfmt::skip]
     #[test]
-    #[ignore = "we do not currently use brakedown"]
     fn spec_254_bit_field() {
         assert_spec_correct::<BrakedownSpec1>(254, 0.02,  6, 33, 13265, 1);
         assert_spec_correct::<BrakedownSpec2>(254, 0.03,  7, 26,  8768, 1);

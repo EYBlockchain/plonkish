@@ -195,6 +195,7 @@ impl<F: Field> MultilinearPolynomial<F> {
         Self::new(output)
     }
 
+    // New polynomial with first variable fixed to x_i, i.e. f(X_i, .., X_n) becomes f(x_i, X_{i+1}, .., X_n).
     pub fn fix_var_in_place(&mut self, x_i: &F, buf: &mut Self) {
         merge_into(&mut buf.evals, self.evals(), x_i, 1, 0);
         buf.num_vars = self.num_vars - 1;

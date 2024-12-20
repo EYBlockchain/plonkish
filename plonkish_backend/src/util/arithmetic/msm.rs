@@ -157,7 +157,6 @@ fn variable_base_msm_serial<C: CurveAffine>(
             }
         }
     }
-
     let scalars = scalars.iter().map(|scalar| scalar.to_repr()).collect_vec();
     let num_bytes = scalars[0].as_ref().len();
     let num_bits = 8 * num_bytes;
