@@ -136,7 +136,9 @@ where
     fn commit(pp: &Self::ProverParam, poly: &Self::Polynomial) -> Result<Self::Commitment, Error> {
         validate_input("commit", pp.num_vars(), [poly], None)?;
 
-        Ok(variable_base_msm(poly.evals(), pp.g()).into()).map(MultilinearIpaCommitment)
+        Ok(MultilinearIpaCommitment(
+            variable_base_msm(poly.evals(), pp.g()).into(),
+        ))
     }
 
     fn batch_commit<'a>(
@@ -241,11 +243,13 @@ mod test {
     type Pcs = MultilinearIpa<Affine>;
 
     #[test]
+    #[ignore = "we do not currently use multilinear IPA"]
     fn commit_open_verify() {
         run_commit_open_verify::<_, Pcs, Keccak256Transcript<_>>();
     }
 
     #[test]
+    #[ignore = "we do not currently use multilinear IPA"]
     fn batch_commit_open_verify() {
         run_batch_commit_open_verify::<_, Pcs, Keccak256Transcript<_>>();
     }

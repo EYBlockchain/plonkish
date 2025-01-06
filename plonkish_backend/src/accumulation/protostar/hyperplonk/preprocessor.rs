@@ -352,13 +352,10 @@ pub(crate) fn lookup_constraints<F: PrimeField>(
             let [m, h_input, h_table] = &[m, h, h + 1]
                 .map(|poly| Query::new(poly, Rotation::cur()))
                 .map(Expression::<F>::Polynomial);
-            let (inputs, tables) = lookup
-                .iter()
-                .map(|(input, table)| (input, table))
-                .unzip::<_, _, Vec<_>, Vec<_>>();
+            let (inputs, tables) = lookup.iter().cloned().unzip::<_, _, Vec<_>, Vec<_>>();
             let [input, table] = &[inputs, tables].map(|exprs| {
                 chain![
-                    exprs.first().cloned().cloned(),
+                    exprs.first().cloned(),
                     exprs
                         .into_iter()
                         .skip(1)

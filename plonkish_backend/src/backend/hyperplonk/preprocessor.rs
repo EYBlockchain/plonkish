@@ -191,11 +191,7 @@ pub(super) fn lookup_constraints<F: PrimeField>(
                 .map(|poly| Query::new(poly, Rotation::cur()))
                 .map(Expression::<F>::Polynomial);
             // separate the input and tables from the lookup
-            let (inputs, tables) = lookup
-                .iter()
-                .map(|(input, table)| (input, table))
-                .unzip::<_, _, Vec<_>, Vec<_>>();
-            // Returns a distributed power expression for the input and table, with base beta, i.e.  inputs[0] + \beta inputs[1] + \beta^2 inputs[2] + ...
+            let (inputs, tables) = lookup.iter().cloned().unzip::<_, _, Vec<_>, Vec<_>>();
             let input = &Expression::distribute_powers(inputs, beta);
             let table = &Expression::distribute_powers(tables, beta);
             // h[i] = (gamma + input[i])^-1 - m[i] * (gamma + table[i])^-1
@@ -298,7 +294,8 @@ pub(crate) fn permutation_polys<F: PrimeField>(
         }
         poly_index
     };
-    // permutations will be the matrix defining all permutation polynomials. As we start with the identity permutation, all entries have value of the index within the matrix.
+    // Permutations will be the matrix defining all permutation polynomials.
+    // As we start with the identity permutation, all entries have value of the index within the matrix.
     let mut permutations = (0..permutation_polys.len() as u64)
         .map(|idx| {
             steps(F::from(idx << num_vars))
