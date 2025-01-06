@@ -233,7 +233,7 @@ impl<F: Field, C: Circuit<F>> PlonkishCircuit<F> for Halo2Circuit<F, C> {
             }),
         ]
         .collect();
-    // Obtain the copy constraints from the preprocess collector
+        // Obtain the copy constraints from the preprocess collector
         circuit_info.permutations = preprocess_collector.permutation.into_cycles();
 
         Ok(circuit_info)
