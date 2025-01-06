@@ -586,13 +586,14 @@ impl<F: Field, const WIDTH: usize> Pow5State<F, WIDTH> {
 
 #[cfg(test)]
 mod tests {
+    use ff::Field;
     use halo2_curves::bn256::{Bn256, Fr};
-    use halo2_curves::pasta::Fp;
     use halo2_proofs::{
         circuit::{Layouter, SimpleFloorPlanner, Value},
         plonk::{Circuit, ConstraintSystem, Error},
     };
 
+    use rand::rngs::OsRng;
     use super::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
     use crate::circuits::poseidongadget::poseidon::{
         primitives::{self as poseidon, BN256param as newParam, ConstantLength, Spec},
@@ -808,22 +809,22 @@ mod tests {
     }
 
     struct HashCircuit<
-        S: Spec<Fp, WIDTH, RATE>,
+        S: Spec<Fr, WIDTH, RATE>,
         const WIDTH: usize,
         const RATE: usize,
         const L: usize,
     > {
-        message: Value<[Fp; L]>,
+        message: Value<[Fr; L]>,
         // For the purpose of this test, witness the result.
         // TODO: Move this into an instance column.
-        output: Value<Fp>,
+        output: Value<Fr>,
         _spec: PhantomData<S>,
     }
 
-    impl<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize, const L: usize>
-        Circuit<Fp> for HashCircuit<S, WIDTH, RATE, L>
+    impl<S: Spec<Fr, WIDTH, RATE>, const WIDTH: usize, const RATE: usize, const L: usize>
+        Circuit<Fr> for HashCircuit<S, WIDTH, RATE, L>
     {
-        type Config = Pow5Config<Fp, WIDTH, RATE>;
+        type Config = Pow5Config<Fr, WIDTH, RATE>;
         type FloorPlanner = SimpleFloorPlanner;
         #[cfg(feature = "circuit-params")]
         type Params = ();
@@ -836,7 +837,7 @@ mod tests {
             }
         }
 
-        fn configure(meta: &mut ConstraintSystem<Fp>) -> Pow5Config<Fp, WIDTH, RATE> {
+        fn configure(meta: &mut ConstraintSystem<Fr>) -> Pow5Config<Fr, WIDTH, RATE> {
             let state = (0..WIDTH).map(|_| meta.advice_column()).collect::<Vec<_>>();
             let partial_sbox = meta.advice_column();
 
@@ -856,8 +857,8 @@ mod tests {
 
         fn synthesize(
             &self,
-            config: Pow5Config<Fp, WIDTH, RATE>,
-            mut layouter: impl Layouter<Fp>,
+            config: Pow5Config<Fr, WIDTH, RATE>,
+            mut layouter: impl Layouter<Fr>,
         ) -> Result<(), Error> {
             let chip = Pow5Chip::construct(config.clone());
 
@@ -900,26 +901,44 @@ mod tests {
         }
     }
 
-    /*#[ignore]
-    #[test]
-    fn poseidon_hash() {
-        let rng = OsRng;
-
-        let message = [Fp::random(rng), Fp::random(rng)];
-        let output =
-            poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init().hash(message);
-
-        let k = 6;
-        let circuit = HashCircuit::<OrchardNullifier, 3, 2, 2> {
-            message: Value::known(message),
-            output: Value::known(output),
-            _spec: PhantomData,
-        };
-        let prover = MockProver::run::<_, true>(k, &circuit, vec![]).unwrap();
-        assert_eq!(prover.verify(), Ok(()))
+    impl CircuitExt<Fr> for HashCircuit<newParam<5, 4, 0>, 5, 4, 4> {
+        fn instances(&self) -> Vec<Vec<Fr>> {
+            /*let mut expected_final_state = (0..7)
+            .map(|idx| Fq::from(idx as u64))
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();*/
+            Vec::new()
+        }
     }
 
-    #[ignore]
+    #[test]
+    fn poseidon_hash() {
+        let message = [Fr::random(OsRng), Fr::random(OsRng),Fr::random(OsRng),Fr::random(OsRng)];
+        let output =
+            poseidon::Hash::<_, newParam<5, 4, 0>, ConstantLength<4>, 5, 4>::init().hash(message);
+        type Pb = HyperPlonk<Zeromorph<UnivariateKzg<Bn256>>>;
+        let circuit =
+            Halo2Circuit::new::<Pb>(6, HashCircuit::<newParam<5, 4, 0>, 5, 4, 4> {
+                message: Value::known(message),
+                output: Value::known(output),
+                _spec: PhantomData,
+            });
+        let param = Pb::setup(&circuit.circuit_info().unwrap(), seeded_std_rng()).unwrap();
+        let (pp, vp) = Pb::preprocess(&param, &circuit.circuit_info().unwrap()).unwrap();
+        let proof = {
+            let mut transcript = Keccak256Transcript::new(());
+            Pb::prove(&pp, &circuit, &mut transcript, seeded_std_rng()).unwrap();
+            transcript.into_proof()
+        };
+        let result = {
+            let mut transcript = Keccak256Transcript::from_proof((), proof.as_slice());
+            Pb::verify(&vp, circuit.instances(), &mut transcript, seeded_std_rng())
+        };
+        assert_eq!(result, Ok(()))
+    }
+
+    /*#[ignore]
     #[test]
     fn poseidon_hash_longer_input() {
         let rng = OsRng;
