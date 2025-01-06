@@ -590,9 +590,7 @@ mod tests {
     use halo2_curves::pasta::Fp;
     use halo2_proofs::{
         circuit::{Layouter, SimpleFloorPlanner, Value},
-        plonk::{
-            Circuit, ConstraintSystem, Error,
-        },
+        plonk::{Circuit, ConstraintSystem, Error},
     };
 
     use super::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
@@ -607,10 +605,7 @@ mod tests {
 
     use crate::{
         frontend::halo2::{CircuitExt, Halo2Circuit},
-        pcs::{
-            multilinear::Zeromorph,
-            univariate::UnivariateKzg,
-        },
+        pcs::{multilinear::Zeromorph, univariate::UnivariateKzg},
         util::{
             test::seeded_std_rng,
             transcript::{InMemoryTranscript, Keccak256Transcript},
