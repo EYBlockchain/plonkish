@@ -27,7 +27,6 @@ pub mod circuit;
 #[cfg(test)]
 mod test;
 
-
 pub trait CircuitExt<F: Field>: Circuit<F> {
     fn rand(_k: usize, _rng: impl RngCore) -> Self
     where
@@ -55,7 +54,6 @@ pub struct Halo2Circuit<F: Field, C: Circuit<F>> {
     challenge_idx: Vec<usize>,
     row_mapping: Vec<usize>,
 }
-
 
 impl<F: Field, C: CircuitExt<F>> Halo2Circuit<F, C> {
     // Generate a new Halo2Circuit from a circuit of type C that implements CircuitExt trait, which extends the Circuit trait from halo2
@@ -108,7 +106,7 @@ impl<F: Field, C: Circuit<F>> AsRef<C> for Halo2Circuit<F, C> {
 
 // Implement PlonkishCircuit trait from backend for Halo2Circuit struct
 impl<F: Field, C: Circuit<F>> PlonkishCircuit<F> for Halo2Circuit<F, C> {
-    // Get PlonkishCircuitInfo from a Halo2 Circuit without preprocessing, i.e. setting fixed/ selector columns or copy constraints. 
+    // Get PlonkishCircuitInfo from a Halo2 Circuit without preprocessing, i.e. setting fixed/ selector columns or copy constraints.
     fn circuit_info_without_preprocess(&self) -> Result<PlonkishCircuitInfo<F>, crate::Error> {
         let Self {
             k,
@@ -245,7 +243,6 @@ impl<F: Field, C: Circuit<F>> PlonkishCircuit<F> for Halo2Circuit<F, C> {
     fn instances(&self) -> &[Vec<F>] {
         &self.instances
     }
-
 
     // Synthesize a circuit for a particular phase with an instance and witness of the circuit,  and challenges
     fn synthesize(&self, phase: usize, challenges: &[F]) -> Result<Vec<Vec<F>>, crate::Error> {
@@ -631,7 +628,6 @@ impl<'a, F: Field> Assignment<F> for WitnessCollector<'a, F> {
 
     fn pop_namespace(&mut self, _: Option<String>) {}
 }
-
 
 // Output index of each advice column in the matrix such that columns are ordered by phase (with all advice columms at the end of the matrix)
 fn advice_idx<F: Field>(cs: &ConstraintSystem<F>) -> Vec<usize> {
