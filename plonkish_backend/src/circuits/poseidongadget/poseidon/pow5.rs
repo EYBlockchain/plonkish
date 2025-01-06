@@ -586,26 +586,14 @@ impl<F: Field, const WIDTH: usize> Pow5State<F, WIDTH> {
 
 #[cfg(test)]
 mod tests {
-    use group::ff::{Field, PrimeField};
-    use halo2_curves::bn256::{Bn256, Fq, Fr};
-    use halo2_curves::grumpkin;
-    use halo2_curves::pasta::{pallas, Fp};
+    use halo2_curves::bn256::{Bn256, Fr};
+    use halo2_curves::pasta::Fp;
     use halo2_proofs::{
         circuit::{Layouter, SimpleFloorPlanner, Value},
-        dev::MockProver,
         plonk::{
-            create_proof, keygen_pk, keygen_vk, verify_proof, Circuit, ConstraintSystem, Error,
-        },
-        poly::kzg::{
-            commitment::{KZGCommitmentScheme, ParamsKZG},
-            multiopen::{ProverGWC, VerifierGWC},
-            strategy::SingleStrategy,
-        },
-        transcript::{
-            Blake2bRead, Blake2bWrite, Challenge255, TranscriptReadBuffer, TranscriptWriterBuffer,
+            Circuit, ConstraintSystem, Error,
         },
     };
-    use rand::rngs::OsRng;
 
     use super::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
     use crate::circuits::poseidongadget::poseidon::{
@@ -620,8 +608,8 @@ mod tests {
     use crate::{
         frontend::halo2::{CircuitExt, Halo2Circuit},
         pcs::{
-            multilinear::{MultilinearKzg, Zeromorph},
-            univariate::{UnivariateIpa, UnivariateKzg},
+            multilinear::Zeromorph,
+            univariate::UnivariateKzg,
         },
         util::{
             test::seeded_std_rng,

@@ -381,9 +381,9 @@ impl<F: PrimeField, S: Spec<F, T, RATE>, const T: usize, const RATE: usize, cons
 
 #[cfg(test)]
 mod tests {
-    use super::{permute, ConstantLength, Hash, Spec};
-    use ff::PrimeField;
-    use halo2_curves::pasta::pallas;
+    //use super::{permute, ConstantLength, Hash, Spec};
+    //use ff::PrimeField;
+    //use halo2_curves::pasta::pallas;
 
     /*#[ignore]
     #[test]

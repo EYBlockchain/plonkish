@@ -57,9 +57,8 @@ impl<const T: usize, const R: usize, const SECURE_MDS: usize> Spec<Fr, T, R>
 mod tests {
     #![allow(dead_code)]
     use crate::circuits::poseidongadget::poseidon::primitives::{
-        generate_constants, permute, ConstantLength, Hash, Mds, Spec,
+        generate_constants, Mds, Spec,
     };
-    use ff::PrimeField;
     use ff::{Field, FromUniformBytes};
     use std::marker::PhantomData;
 
