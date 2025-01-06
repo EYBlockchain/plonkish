@@ -4,7 +4,6 @@ use crate::circuits::poseidongadget::poseidon::primitives::generate_constants;
 use halo2_curves::bn256::Fr;
 use halo2_proofs::arithmetic::Field;
 
-
 // To do rewrite this below
 /// Poseidon-128 using the $x^5$ S-box, with a width of 3 field elements, and the
 /// standard number of rounds for 128-bit security "with margin".
@@ -16,8 +15,8 @@ use halo2_proofs::arithmetic::Field;
 // Do we have to specify width and rate generically?
 pub struct BN256param<const T: usize, const R: usize, const SECURE_MDS: usize>;
 
-impl<const T: usize, const R: usize, const SECURE_MDS: usize> Spec<Fr, T, R> 
-    for BN256param<T,R,SECURE_MDS> 
+impl<const T: usize, const R: usize, const SECURE_MDS: usize> Spec<Fr, T, R>
+    for BN256param<T, R, SECURE_MDS> 
 {
     fn full_rounds() -> usize {
         8
@@ -73,7 +72,7 @@ mod tests {
     );
 
     impl<const T: usize, const R: usize, F: Field, const SECURE_MDS: usize> 
-        BN256paramGen<T, R, F, SECURE_MDS> 
+        BN256paramGen<T, R, F, SECURE_MDS>
     {
         pub fn new() -> Self {
             BN256paramGen(PhantomData)
@@ -82,15 +81,15 @@ mod tests {
 
     impl<
             const T: usize,
-            const R: usize, 
-            F: FromUniformBytes<64> + Ord, 
+            const R: usize,
+            F: FromUniformBytes<64> + Ord,
             const SECURE_MDS: usize,
-        > Spec<F, T, R> for BN256paramGen<T,R, F, SECURE_MDS> 
+        > Spec<F, T, R> for BN256paramGen<T,R, F, SECURE_MDS>
     {
         fn full_rounds() -> usize {
             8
         }
-    
+
         fn partial_rounds() -> usize {
             //TO DO: we need an even number of partial rounds - can we round up
             match T {
@@ -105,11 +104,11 @@ mod tests {
                 _ => unimplemented!(),
             }
         }
-    
+
         fn sbox(val: F) -> F {
             val.pow_vartime([5])
         }
-    
+   
         fn secure_mds() -> usize {
             SECURE_MDS
         }

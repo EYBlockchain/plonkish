@@ -587,9 +587,9 @@ impl<F: Field, const WIDTH: usize> Pow5State<F, WIDTH> {
 #[cfg(test)]
 mod tests {
     use group::ff::{Field, PrimeField};
-    use halo2_curves::pasta::{pallas, Fp};
     use halo2_curves::bn256::{Bn256, Fr, Fq};
     use halo2_curves::grumpkin;
+    use halo2_curves::pasta::{pallas, Fp};
     use halo2_proofs::{
         circuit::{Layouter, SimpleFloorPlanner, Value},
         dev::MockProver,
@@ -615,18 +615,18 @@ mod tests {
     use std::convert::TryInto;
     use std::marker::PhantomData;
 
-    use crate::backend::{hyperplonk::HyperPlonk, PlonkishCircuit, PlonkishBackend,};
+    use crate::backend::{hyperplonk::HyperPlonk, PlonkishBackend, PlonkishCircuit};
     
     use crate::{
         frontend::halo2::{CircuitExt, Halo2Circuit},
         pcs::{
             multilinear::{MultilinearKzg, Zeromorph},
-            univariate::{UnivariateKzg, UnivariateIpa},
+            univariate::{UnivariateIpa, UnivariateKzg},
         },
         util::{
-            transcript::{InMemoryTranscript, Keccak256Transcript},
             test::seeded_std_rng,
-        }
+            transcript::{InMemoryTranscript, Keccak256Transcript},
+        },
     };
 
     struct PermuteCircuit<S: Spec<Fr, WIDTH, RATE>, const WIDTH: usize, const RATE: usize>(
@@ -728,7 +728,7 @@ mod tests {
         }
     }
 
-    impl CircuitExt<Fr> for PermuteCircuit::<newParam<5,4,0>, 5, 4> {
+    impl CircuitExt<Fr> for PermuteCircuit<newParam<5, 4, 0>, 5, 4> {
         fn instances(&self) -> Vec<Vec<Fr>> {
             /*let mut expected_final_state = (0..7)
             .map(|idx| Fq::from(idx as u64))
@@ -749,8 +749,8 @@ mod tests {
     #[test]
     fn poseidon_permute_new_param() {
         type Pb = HyperPlonk<Zeromorph<UnivariateKzg<Bn256>>>;
-        let circuit = 
-            Halo2Circuit::new::<Pb>(6, PermuteCircuit::<newParam<5,4,0>, 5, 4>(PhantomData));
+        let circuit =
+            Halo2Circuit::new::<Pb>(6, PermuteCircuit::<newParam<5, 4, 0>, 5, 4>(PhantomData));
         let param = Pb::setup(&circuit.circuit_info().unwrap(), seeded_std_rng()).unwrap();
         let (pp, vp) = Pb::preprocess(&param, &circuit.circuit_info().unwrap()).unwrap();
         let proof = {
