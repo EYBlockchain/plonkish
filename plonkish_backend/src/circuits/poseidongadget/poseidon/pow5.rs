@@ -587,7 +587,7 @@ impl<F: Field, const WIDTH: usize> Pow5State<F, WIDTH> {
 #[cfg(test)]
 mod tests {
     use group::ff::{Field, PrimeField};
-    use halo2_curves::bn256::{Bn256, Fr, Fq};
+    use halo2_curves::bn256::{Bn256, Fq, Fr};
     use halo2_curves::grumpkin;
     use halo2_curves::pasta::{pallas, Fp};
     use halo2_proofs::{
@@ -616,7 +616,7 @@ mod tests {
     use std::marker::PhantomData;
 
     use crate::backend::{hyperplonk::HyperPlonk, PlonkishBackend, PlonkishCircuit};
-    
+
     use crate::{
         frontend::halo2::{CircuitExt, Halo2Circuit},
         pcs::{

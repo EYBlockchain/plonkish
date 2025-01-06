@@ -16,7 +16,7 @@ use halo2_proofs::arithmetic::Field;
 pub struct BN256param<const T: usize, const R: usize, const SECURE_MDS: usize>;
 
 impl<const T: usize, const R: usize, const SECURE_MDS: usize> Spec<Fr, T, R>
-    for BN256param<T, R, SECURE_MDS> 
+    for BN256param<T, R, SECURE_MDS>
 {
     fn full_rounds() -> usize {
         8
@@ -71,7 +71,7 @@ mod tests {
         PhantomData<F>,
     );
 
-    impl<const T: usize, const R: usize, F: Field, const SECURE_MDS: usize> 
+    impl<const T: usize, const R: usize, F: Field, const SECURE_MDS: usize>
         BN256paramGen<T, R, F, SECURE_MDS>
     {
         pub fn new() -> Self {
@@ -84,7 +84,7 @@ mod tests {
             const R: usize,
             F: FromUniformBytes<64> + Ord,
             const SECURE_MDS: usize,
-        > Spec<F, T, R> for BN256paramGen<T,R, F, SECURE_MDS>
+        > Spec<F, T, R> for BN256paramGen<T, R, F, SECURE_MDS>
     {
         fn full_rounds() -> usize {
             8
@@ -108,11 +108,11 @@ mod tests {
         fn sbox(val: F) -> F {
             val.pow_vartime([5])
         }
-   
+
         fn secure_mds() -> usize {
             SECURE_MDS
         }
-    
+
         fn constants() -> (Vec<[F; T]>, Mds<F, T>, Mds<F, T>) {
             // TO DO: manually generate the constants here
             generate_constants::<_, Self, T, R>()
