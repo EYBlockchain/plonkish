@@ -707,7 +707,7 @@ fn phase_offsets(phases: &[u8]) -> Vec<usize> {
         .collect()
 }
 
-//convert from an expression defined in halo2 to an expression defined in backend 
+//convert from an expression defined in halo2 to an expression defined in backend
 fn convert_expression<F: Field>(
     cs: &ConstraintSystem<F>,
     advice_idx: &[usize],
