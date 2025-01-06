@@ -60,7 +60,7 @@ pub struct Halo2Circuit<F: Field, C: Circuit<F>> {
 impl<F: Field, C: CircuitExt<F>> Halo2Circuit<F, C> {
     // Generate a new Halo2Circuit from a circuit of type C that implements CircuitExt trait, which extends the Circuit trait from halo2
     pub fn new<E: WitnessEncoding>(k: usize, circuit: C) -> Self {
-        // Obtain constraint system cs and config from circuit 
+        // Obtain constraint system cs and config from circuit
         let (cs, config) = {
             let mut cs = ConstraintSystem::default();
             let config = C::configure(&mut cs);
@@ -106,7 +106,7 @@ impl<F: Field, C: Circuit<F>> AsRef<C> for Halo2Circuit<F, C> {
     }
 }
 
-// Implement PlonkishCircuit trait from backend for Halo2Circuit struct 
+// Implement PlonkishCircuit trait from backend for Halo2Circuit struct
 impl<F: Field, C: Circuit<F>> PlonkishCircuit<F> for Halo2Circuit<F, C> {
     // Get PlonkishCircuitInfo from a Halo2 Circuit without preprocessing, i.e. setting fixed/ selector columns or copy constraints. 
     fn circuit_info_without_preprocess(&self) -> Result<PlonkishCircuitInfo<F>, crate::Error> {
@@ -119,7 +119,7 @@ impl<F: Field, C: Circuit<F>> PlonkishCircuit<F> for Halo2Circuit<F, C> {
         } = self;
         // Generate indices of advice columns so that they are ordered by phase
         let advice_idx = advice_idx(cs);
-        // Convert expressions from halo2 to backend 
+        // Convert expressions from halo2 to backend
         let constraints = cs
             .gates()
             .iter()
@@ -129,7 +129,7 @@ impl<F: Field, C: Circuit<F>> PlonkishCircuit<F> for Halo2Circuit<F, C> {
                 })
             })
             .collect();
-        // Convert lookup expressions from halo2 to backend 
+        // Convert lookup expressions from halo2 to backend
         let lookups = cs
             .lookups()
             .iter()
@@ -149,12 +149,12 @@ impl<F: Field, C: Circuit<F>> PlonkishCircuit<F> for Halo2Circuit<F, C> {
             .collect();
 
         let num_instances = instances.iter().map(Vec::len).collect_vec();
-        // Set preprocess_polys, initialized to 0, with 2^k rows. 
+        // Set preprocess_polys, initialized to 0, with 2^k rows.
         let preprocess_polys =
             vec![vec![F::ZERO; 1 << k]; cs.num_selectors() + cs.num_fixed_columns()];
-        //Obtain indices of columns from the contraint system 
+        //Obtain indices of columns from the contraint system
         let column_idx = column_idx(cs);
-        // Initialize permutations defining copy constraints 
+        // Initialize permutations defining copy constraints
         let permutations = cs
             .permutation()
             .get_columns()
@@ -178,7 +178,7 @@ impl<F: Field, C: Circuit<F>> PlonkishCircuit<F> for Halo2Circuit<F, C> {
         })
     }
 
-    // Get PlonkishCircuitInfo from a Halo2 Circuit with preprocessing, i.e. setting fixed/ selector columns or copy constraints. 
+    // Get PlonkishCircuitInfo from a Halo2 Circuit with preprocessing, i.e. setting fixed/ selector columns or copy constraints.
     fn circuit_info(&self) -> Result<PlonkishCircuitInfo<F>, crate::Error> {
         let Self {
             k,
@@ -193,9 +193,9 @@ impl<F: Field, C: Circuit<F>> PlonkishCircuit<F> for Halo2Circuit<F, C> {
         let mut circuit_info = self.circuit_info_without_preprocess()?;
 
         let num_instances = instances.iter().map(Vec::len).collect_vec();
-        //Obtain indices of columns from the contraint system 
+        //Obtain indices of columns from the contraint system
         let column_idx = column_idx(cs);
-        // Obtain initial permutations from constraint system, for now no copy constraints are set 
+        // Obtain initial permutations from constraint system, for now no copy constraints are set
         let permutation_column_idx = cs
             .permutation()
             .get_columns()
@@ -256,7 +256,7 @@ impl<F: Field, C: Circuit<F>> PlonkishCircuit<F> for Halo2Circuit<F, C> {
             advice_idx_in_phase: &self.advice_idx_in_phase,
             challenge_idx: &self.challenge_idx,
             instances: instances.as_slice(),
-            // all advice columns are initialized to zero, there are 2^k rows and self.num_witness_polys[phase] columns 
+            // all advice columns are initialized to zero, there are 2^k rows and self.num_witness_polys[phase] columns
             advices: vec![vec![F::ZERO.into(); 1 << self.k]; self.num_witness_polys[phase]],
             challenges,
             row_mapping: &self.row_mapping,
@@ -411,7 +411,7 @@ impl<'a, F: Field> Assignment<F> for PreprocessCollector<'a, F> {
         Ok(())
     }
 
-    // Challenges are created later 
+    // Challenges are created later
     fn get_challenge(&self, _: Challenge) -> Value<F> {
         Value::unknown()
     }
