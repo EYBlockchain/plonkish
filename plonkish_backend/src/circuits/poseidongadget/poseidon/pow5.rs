@@ -915,7 +915,7 @@ mod tests {
     #[test]
     fn poseidon_hash() {
         let message = [
-            Fr::random(OsRng), 
+            Fr::random(OsRng),
             Fr::random(OsRng),
             Fr::random(OsRng),
             Fr::random(OsRng),
