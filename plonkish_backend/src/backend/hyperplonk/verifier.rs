@@ -48,7 +48,7 @@ pub(crate) fn verify_sum_check<F: PrimeField>(
     y: &[F],
     transcript: &mut impl FieldTranscriptRead<F>,
 ) -> Result<(Vec<Vec<F>>, Vec<Evaluation<F>>), Error> {
-    // In description of the sum check protocol in https://eprint.iacr.org/2022/1355.pdf, 
+    // In description of the sum check protocol in https://eprint.iacr.org/2022/1355.pdf,
     // x_eval corresponds to the v in the final check, x is \alpha_1, ..., \alpha_{\mu} the challenges during the sum check protocol
     let (x_eval, x) = ClassicSumCheck::<EvaluationsProver<_>, BinaryField>::verify(
         &(),
@@ -82,7 +82,7 @@ pub(crate) fn verify_sum_check<F: PrimeField>(
         ));
     }
 
-    // Obtain points and evaluations for which we need to verify the opening proofs 
+    // Obtain points and evaluations for which we need to verify the opening proofs
     let point_offset = point_offset(&pcs_query);
     let evals = pcs_query
         .iter()

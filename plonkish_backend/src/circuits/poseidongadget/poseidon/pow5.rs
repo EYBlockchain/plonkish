@@ -588,13 +588,13 @@ impl<F: Field, const WIDTH: usize> Pow5State<F, WIDTH> {
 mod tests {
     use group::ff::{Field, PrimeField};
     use halo2_proofs::{
-        circuit::{Layouter, SimpleFloorPlanner, Value},
+        circuit::{Layouter,SimpleFloorPlanner,Value},
         dev::MockProver,
         plonk::{Circuit, ConstraintSystem, Error,keygen_vk,keygen_pk,create_proof,verify_proof},
-        poly::kzg::{commitment::{KZGCommitmentScheme,ParamsKZG},multiopen::{ProverGWC, VerifierGWC},strategy::SingleStrategy,},
-        transcript::{Blake2bRead, Blake2bWrite, Challenge255, TranscriptReadBuffer, TranscriptWriterBuffer},
+        poly::kzg::{commitment::{KZGCommitmentScheme,ParamsKZG},multiopen::{ProverGWC,VerifierGWC},strategy::SingleStrategy,},
+        transcript::{Blake2bRead,Blake2bWrite,Challenge255,TranscriptReadBuffer,TranscriptWriterBuffer},
     };
-    use halo2_curves::pasta::{pallas, Fp};
+    use halo2_curves::pasta::{pallas,Fp};
     use halo2_curves::bn256::{Bn256,Fr,Fq};
     use halo2_curves::grumpkin;
     use rand::rngs::OsRng;
@@ -725,10 +725,10 @@ mod tests {
 
         fn instances(&self) -> Vec<Vec<Fr>> {
             /*let mut expected_final_state = (0..7)
-                .map(|idx| Fq::from(idx as u64))
-                .collect::<Vec<_>>()
-                .try_into()
-                .unwrap();*/
+            .map(|idx| Fq::from(idx as u64))
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();*/
             Vec::new()
         }
     }
