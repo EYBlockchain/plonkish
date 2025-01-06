@@ -320,7 +320,7 @@ where
             &lookup_h_permutation_z_comms,
         ]
         .collect_vec();
-     // Verify the opening proofs for the polynomials commitments
+        // Verify the opening proofs for the polynomials commitments
         Pcs::batch_verify(&vp.pcs, comms, &points, &evals, transcript)?;
 
         Ok(())

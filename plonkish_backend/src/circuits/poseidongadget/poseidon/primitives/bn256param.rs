@@ -1,8 +1,9 @@
 // TO DO: don't want to use two lines below
-use halo2_proofs::arithmetic::Field;
 use super::{Mds, Spec};
-use halo2_curves::bn256::Fr;
 use crate::circuits::poseidongadget::poseidon::primitives::generate_constants;
+use halo2_curves::bn256::Fr;
+use halo2_proofs::arithmetic::Field;
+
 
 // To do rewrite this below
 /// Poseidon-128 using the $x^5$ S-box, with a width of 3 field elements, and the
@@ -13,9 +14,11 @@ use crate::circuits::poseidongadget::poseidon::primitives::generate_constants;
 /// partial rounds, making it easier to construct a Halo 2 circuit.
 #[derive(Debug)]
 // Do we have to specify width and rate generically?
-pub struct BN256param<const T: usize, const R: usize,const SECURE_MDS: usize>;
+pub struct BN256param<const T: usize, const R: usize, const SECURE_MDS: usize>;
 
-impl<const T: usize, const R: usize, const SECURE_MDS: usize > Spec<Fr, T, R> for BN256param<T,R,SECURE_MDS> {
+impl<const T: usize, const R: usize, const SECURE_MDS: usize> Spec<Fr, T, R> 
+    for BN256param<T,R,SECURE_MDS> 
+{
     fn full_rounds() -> usize {
         8
     }
@@ -51,7 +54,6 @@ impl<const T: usize, const R: usize, const SECURE_MDS: usize > Spec<Fr, T, R> fo
 
 // TO DO Remove both
 
-
 #[cfg(test)]
 mod tests {
     #![allow(dead_code)]
@@ -66,15 +68,25 @@ mod tests {
     /// such that its constants will be generated at runtime.
     #[derive(Debug)]
     // to do change Field to Fr?
-    pub struct BN256paramGen<const T: usize, const R: usize, F: Field, const SECURE_MDS: usize>(PhantomData<F>);
+    pub struct BN256paramGen<const T: usize, const R: usize, F: Field, const SECURE_MDS: usize>(
+        PhantomData<F>,
+    );
 
-    impl<const T: usize, const R: usize, F: Field, const SECURE_MDS: usize> BN256paramGen<T, R, F, SECURE_MDS> {
+    impl<const T: usize, const R: usize, F: Field, const SECURE_MDS: usize> 
+        BN256paramGen<T, R, F, SECURE_MDS> 
+    {
         pub fn new() -> Self {
             BN256paramGen(PhantomData)
         }
     }
 
-    impl<const T: usize, const R: usize, F: FromUniformBytes<64> + Ord, const SECURE_MDS: usize> Spec<F, T, R> for BN256paramGen<T,R, F, SECURE_MDS> {
+    impl<
+            const T: usize,
+            const R: usize, 
+            F: FromUniformBytes<64> + Ord, 
+            const SECURE_MDS: usize,
+        > Spec<F, T, R> for BN256paramGen<T,R, F, SECURE_MDS> 
+    {
         fn full_rounds() -> usize {
             8
         }
@@ -117,14 +129,14 @@ mod tests {
     #[test]
     #[ignore]
     fn test_against_reference() {
-       // TO DO: write this  as in p128pow5t3.rs once we have the constants manually generated
+        // TO DO: write this  as in p128pow5t3.rs once we have the constants manually generated
     }
 
     #[test]
     #[ignore]
     fn permute_test_vectors() {
 
-       /*  macro_rules! permute_test_vectors {
+        /*  macro_rules! permute_test_vectors {
             ($t:expr) => {
                 {
                     r = $t - 1;
@@ -148,18 +160,13 @@ mod tests {
 
             };
         }
-
         for t in 1..7 {
             permute_test_vectors!(t);
-            
         }*/
-
-        
     }
 
     #[test]
     #[ignore]
-     // Generate test vectors for the permutation and adapt this
-    fn hash_test_vectors() {
-    }
+    // Generate test vectors for the permutation and adapt this
+    fn hash_test_vectors() {}
 }

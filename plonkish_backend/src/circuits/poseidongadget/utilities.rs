@@ -239,13 +239,13 @@ mod tests {
     use super::*;
     use ff::FromUniformBytes;
     use group::ff::{Field, PrimeField};
+    use halo2_curves::pasta::pallas;
     use halo2_proofs::{
         circuit::{Layouter, SimpleFloorPlanner},
         dev::{FailureLocation, MockProver, VerifyFailure},
         plonk::{Any, Circuit, ConstraintSystem, Constraints, Error, Selector},
         poly::Rotation,
     };
-    use halo2_curves::pasta::pallas;
     use proptest::prelude::*;
     use rand::rngs::OsRng;
     use std::convert::TryInto;
@@ -314,13 +314,13 @@ mod tests {
 
         for i in 0..8 {
             let circuit: MyCircuit<8> = MyCircuit(i);
-            let prover = MockProver::<pallas::Base>::run::<_,true>(3, &circuit, vec![]).unwrap();
+            let prover = MockProver::<pallas::Base>::run::<_, true>(3, &circuit, vec![]).unwrap();
             assert_eq!(prover.verify(), Ok(()));
         }
 
         {
             let circuit: MyCircuit<8> = MyCircuit(8);
-            let prover = MockProver::<pallas::Base>::run::<_,true>(3, &circuit, vec![]).unwrap();
+            let prover = MockProver::<pallas::Base>::run::<_, true>(3, &circuit, vec![]).unwrap();
             assert_eq!(
                 prover.verify(),
                 Err(vec![VerifyFailure::ConstraintNotSatisfied {

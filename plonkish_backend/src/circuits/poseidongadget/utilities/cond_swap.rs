@@ -190,12 +190,12 @@ mod tests {
     use super::{CondSwapChip, CondSwapConfig, CondSwapInstructions};
     use ff::PrimeField;
     use group::ff::Field;
+    use halo2_curves::pasta::pallas::Base;
     use halo2_proofs::{
         circuit::{Layouter, SimpleFloorPlanner, Value},
         dev::MockProver,
         plonk::{Circuit, ConstraintSystem, Error},
     };
-    use halo2_curves::pasta::pallas::Base;
     use rand::rngs::OsRng;
 
     #[test]
@@ -282,7 +282,7 @@ mod tests {
                 b: Value::known(Base::random(rng)),
                 swap: Value::known(false),
             };
-            let prover = MockProver::<Base>::run::<_,true>(3, &circuit, vec![]).unwrap();
+            let prover = MockProver::<Base>::run::<_, true>(3, &circuit, vec![]).unwrap();
             assert_eq!(prover.verify(), Ok(()));
         }
     }

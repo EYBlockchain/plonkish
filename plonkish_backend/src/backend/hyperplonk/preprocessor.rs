@@ -186,7 +186,7 @@ pub(super) fn lookup_constraints<F: PrimeField>(
         .zip(m_offset..)
         .zip(h_offset..)
         .flat_map(|((lookup, m), h)| {
-            // make m and h into polynomials, these are created during proving 
+            // make m and h into polynomials, these are created during proving
             let [m, h] = &[m, h]
                 .map(|poly| Query::new(poly, Rotation::cur()))
                 .map(Expression::<F>::Polynomial);

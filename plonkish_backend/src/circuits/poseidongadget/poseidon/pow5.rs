@@ -587,37 +587,44 @@ impl<F: Field, const WIDTH: usize> Pow5State<F, WIDTH> {
 #[cfg(test)]
 mod tests {
     use group::ff::{Field, PrimeField};
-    use halo2_proofs::{
-        circuit::{Layouter,SimpleFloorPlanner,Value},
-        dev::MockProver,
-        plonk::{Circuit, ConstraintSystem, Error,keygen_vk,keygen_pk,create_proof,verify_proof},
-        poly::kzg::{commitment::{KZGCommitmentScheme,ParamsKZG},multiopen::{ProverGWC,VerifierGWC},strategy::SingleStrategy,},
-        transcript::{Blake2bRead,Blake2bWrite,Challenge255,TranscriptReadBuffer,TranscriptWriterBuffer},
-    };
-    use halo2_curves::pasta::{pallas,Fp};
-    use halo2_curves::bn256::{Bn256,Fr,Fq};
+    use halo2_curves::pasta::{pallas, Fp};
+    use halo2_curves::bn256::{Bn256, Fr, Fq};
     use halo2_curves::grumpkin;
+    use halo2_proofs::{
+        circuit::{Layouter, SimpleFloorPlanner, Value},
+        dev::MockProver,
+        plonk::{
+            create_proof, keygen_pk, keygen_vk, verify_proof, Circuit, ConstraintSystem, Error,
+        },
+        poly::kzg::{
+            commitment::{KZGCommitmentScheme, ParamsKZG},
+            multiopen::{ProverGWC, VerifierGWC},
+            strategy::SingleStrategy,
+        },
+        transcript::{
+            Blake2bRead, Blake2bWrite, Challenge255, TranscriptReadBuffer, TranscriptWriterBuffer,
+        },
+    };
     use rand::rngs::OsRng;
 
     use super::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
     use crate::circuits::poseidongadget::poseidon::{
-        primitives::{self as poseidon, ConstantLength, BN256param as newParam, Spec},
+        primitives::{self as poseidon, BN256param as newParam, ConstantLength, Spec},
         Hash,
     };
     use std::convert::TryInto;
     use std::marker::PhantomData;
 
-    use crate::backend::{
-        hyperplonk::HyperPlonk,
-        PlonkishCircuit,
-        PlonkishBackend,
-    };
+    use crate::backend::{hyperplonk::HyperPlonk, PlonkishCircuit, PlonkishBackend,};
     
     use crate::{
-        frontend::halo2::{CircuitExt,Halo2Circuit},
-        pcs::{multilinear::{MultilinearKzg,Zeromorph},univariate::{UnivariateKzg,UnivariateIpa}},
+        frontend::halo2::{CircuitExt, Halo2Circuit},
+        pcs::{
+            multilinear::{MultilinearKzg, Zeromorph},
+            univariate::{UnivariateKzg, UnivariateIpa},
+        },
         util::{
-            transcript::{InMemoryTranscript,Keccak256Transcript},
+            transcript::{InMemoryTranscript, Keccak256Transcript},
             test::seeded_std_rng,
         }
     };
@@ -722,7 +729,6 @@ mod tests {
     }
 
     impl CircuitExt<Fr> for PermuteCircuit::<newParam<5,4,0>, 5, 4> {
-
         fn instances(&self) -> Vec<Vec<Fr>> {
             /*let mut expected_final_state = (0..7)
             .map(|idx| Fq::from(idx as u64))
@@ -733,7 +739,7 @@ mod tests {
         }
     }
 
-   /*  #[test]
+    /*  #[test]
     fn poseidon_permute() {
         let k = 6;
         let circuit = PermuteCircuit::<OrchardNullifier, 3, 2>(PhantomData);
@@ -743,14 +749,15 @@ mod tests {
     #[test]
     fn poseidon_permute_new_param() {
         type Pb = HyperPlonk<Zeromorph<UnivariateKzg<Bn256>>>;
-        let circuit = Halo2Circuit::new::<Pb>(6, PermuteCircuit::<newParam<5,4,0>, 5, 4>(PhantomData));
+        let circuit = 
+            Halo2Circuit::new::<Pb>(6, PermuteCircuit::<newParam<5,4,0>, 5, 4>(PhantomData));
         let param = Pb::setup(&circuit.circuit_info().unwrap(), seeded_std_rng()).unwrap();
         let (pp, vp) = Pb::preprocess(&param, &circuit.circuit_info().unwrap()).unwrap();
         let proof = {
-                let mut transcript = Keccak256Transcript::new(());
-                Pb::prove(&pp, &circuit, &mut transcript, seeded_std_rng()).unwrap();
-                transcript.into_proof()
-            };
+            let mut transcript = Keccak256Transcript::new(());
+            Pb::prove(&pp, &circuit, &mut transcript, seeded_std_rng()).unwrap();
+            transcript.into_proof()
+        };
         let result = {
             let mut transcript = Keccak256Transcript::from_proof((), proof.as_slice());
             Pb::verify(&vp, circuit.instances(), &mut transcript, seeded_std_rng())
@@ -990,5 +997,4 @@ mod tests {
             .render(6, &circuit, &root)
             .unwrap();
     }*/
-
 }
