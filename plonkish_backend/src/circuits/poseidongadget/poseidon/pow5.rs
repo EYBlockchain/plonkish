@@ -593,12 +593,12 @@ mod tests {
         plonk::{Circuit, ConstraintSystem, Error},
     };
 
-    use rand::rngs::OsRng;
     use super::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
     use crate::circuits::poseidongadget::poseidon::{
         primitives::{self as poseidon, BN256param as newParam, ConstantLength, Spec},
         Hash,
     };
+    use rand::rngs::OsRng;
     use std::convert::TryInto;
     use std::marker::PhantomData;
 
@@ -914,16 +914,23 @@ mod tests {
 
     #[test]
     fn poseidon_hash() {
-        let message = [Fr::random(OsRng), Fr::random(OsRng),Fr::random(OsRng),Fr::random(OsRng)];
+        let message = [
+            Fr::random(OsRng), 
+            Fr::random(OsRng),
+            Fr::random(OsRng),
+            Fr::random(OsRng)
+        ];
         let output =
             poseidon::Hash::<_, newParam<5, 4, 0>, ConstantLength<4>, 5, 4>::init().hash(message);
         type Pb = HyperPlonk<Zeromorph<UnivariateKzg<Bn256>>>;
-        let circuit =
-            Halo2Circuit::new::<Pb>(6, HashCircuit::<newParam<5, 4, 0>, 5, 4, 4> {
+        let circuit = Halo2Circuit::new::<Pb>(
+            6, 
+            HashCircuit::<newParam<5, 4, 0>, 5, 4, 4> {
                 message: Value::known(message),
                 output: Value::known(output),
                 _spec: PhantomData,
-            });
+            }
+        );
         let param = Pb::setup(&circuit.circuit_info().unwrap(), seeded_std_rng()).unwrap();
         let (pp, vp) = Pb::preprocess(&param, &circuit.circuit_info().unwrap()).unwrap();
         let proof = {
