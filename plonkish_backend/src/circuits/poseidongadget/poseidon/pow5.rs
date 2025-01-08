@@ -718,11 +718,6 @@ mod tests {
             $(
                 impl CircuitExt<Fr> for PermuteCircuit<newParam<$n, $m, 0>, $n, $m> {
                     fn instances(&self) -> Vec<Vec<Fr>> {
-                        /*let mut expected_final_state = (0..7)
-                        .map(|idx| Fq::from(idx as u64))
-                        .collect::<Vec<_>>()
-                        .try_into()
-                        .unwrap();*/
                         Vec::new()
                     }
                 }
@@ -766,64 +761,6 @@ mod tests {
                 _ => unreachable!(),
             }
         }
-
-        /*let k =6;
-        let circuit = PermuteCircuit::<newParam<7,6,0>, 7, 6>(PhantomData);
-        let prover = MockProver::run::<_, false>(k, &circuit, vec![]).unwrap();
-        //assert_eq!(prover.verify(), Ok(()))
-        prover.assert_satisfied()*/
-
-        /*let k =6;
-        let circuit = PermuteCircuit::<newParam<7,6,0>, 7, 6>(PhantomData);
-        let prover = MockProver::run::<_, true>(k, &circuit, vec![]).unwrap();
-        //assert_eq!(prover.verify(), Ok(()))
-        prover.assert_satisfied()*/
-
-        /*let k =6;
-        let params = ParamsKZG::<Bn256>::setup(k, seeded_std_rng());
-        let circuit = PermuteCircuit::<newParam<7,6,0>, 7, 6>(PhantomData);
-        let vk =
-            keygen_vk::<_, _, _, true>(&params, &circuit).expect("keygen_vk should not fail");
-        let pk = keygen_pk::<_, _, _, true>(&params, vk, &circuit)
-            .expect("keygen_pk should not fail");
-        let instances_vec: Vec<&[Fr]> = Vec::new();
-        let instances: &[&[Fr]] = &instances_vec;
-        let mut transcript = Blake2bWrite::<_, _, Challenge255<_>>::init(vec![]);
-        create_proof::<
-            KZGCommitmentScheme<Bn256>,
-            ProverGWC<'_, Bn256>,
-            _,
-            _,
-            _,
-            _,
-            true,
-        >(
-            &params,
-            &pk,
-            &[circuit],
-            &[instances],
-            seeded_std_rng(),
-            &mut transcript,
-        )
-        .expect("prover should not fail");
-        let proof = transcript.finalize();
-        let strategy = SingleStrategy::new(&params);
-        let mut transcript = Blake2bRead::<_, _, Challenge255<_>>::init(&proof[..]);
-        let result = verify_proof::<
-            KZGCommitmentScheme<Bn256>,
-            VerifierGWC<'_, Bn256>,
-            _,
-            _,
-            SingleStrategy<'_, Bn256>,
-            true,
-        >(
-            &params,
-            pk.get_vk(),
-            strategy,
-            &[instances],
-            &mut transcript
-        ).is_ok();
-        assert!(result)*/
     }
 
     struct HashCircuit<
@@ -924,11 +861,6 @@ mod tests {
             $(
                 impl CircuitExt<Fr> for HashCircuit<newParam<$n, $m, 0>, $n, $m, $m> {
                     fn instances(&self) -> Vec<Vec<Fr>> {
-                        /*let mut expected_final_state = (0..7)
-                        .map(|idx| Fq::from(idx as u64))
-                        .collect::<Vec<_>>()
-                        .try_into()
-                        .unwrap();*/
                         Vec::new()
                     }
                 }
@@ -940,11 +872,6 @@ mod tests {
 
     impl CircuitExt<Fr> for HashCircuit<newParam<3, 2, 0>, 3, 2, 3> {
         fn instances(&self) -> Vec<Vec<Fr>> {
-            /*let mut expected_final_state = (0..7)
-            .map(|idx| Fq::from(idx as u64))
-            .collect::<Vec<_>>()
-            .try_into()
-            .unwrap();*/
             Vec::new()
         }
     }
