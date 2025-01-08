@@ -381,7 +381,7 @@ impl<F: PrimeField, S: Spec<F, T, RATE>, const T: usize, const RATE: usize, cons
 
 #[cfg(test)]
 mod tests {
-    use super::{permute, ConstantLength, Hash, Spec, BN256param};
+    use super::{permute, BN256param, ConstantLength, Hash, Spec};
     use ff::PrimeField;
     use halo2_curves::bn256::Fr;
 
@@ -389,7 +389,7 @@ mod tests {
     fn bn256_spec_equivalence() {
         let message = [Fr::from(6), Fr::from(42)];
 
-        let (round_constants, mds, _) = BN256param::<3,2,0>::constants();
+        let (round_constants, mds, _) = BN256param::<3, 2, 0>::constants();
 
         let hasher = Hash::<_, BN256param<3, 2, 0>, ConstantLength<2>, 3, 2>::init();
         let result = hasher.hash(message);

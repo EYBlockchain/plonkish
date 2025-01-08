@@ -115,5 +115,4 @@ mod tests {
             generate_constants::<_, Self, T, R>()
         }
     }
-
 }
