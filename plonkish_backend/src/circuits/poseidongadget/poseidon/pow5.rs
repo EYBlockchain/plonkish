@@ -738,8 +738,8 @@ mod tests {
         macro_rules! test_poseidon_permute {
             ($i:expr, $j:expr) => {{
                 let circuit = Halo2Circuit::new::<Pb>(
-                    6, 
-                    PermuteCircuit::<newParam<$j, $i, 0>, $j, $i>(PhantomData)
+                    6,
+                    PermuteCircuit::<newParam<$j, $i, 0>, $j, $i>(PhantomData),
                 );
                 let param = Pb::setup(&circuit.circuit_info().unwrap(), seeded_std_rng()).unwrap();
                 let (pp, vp) = Pb::preprocess(&param, &circuit.circuit_info().unwrap()).unwrap();
@@ -935,7 +935,7 @@ mod tests {
             )*
         }
     }
-    
+
     impl_circuit_ext!(2, 1, 3, 2, 4, 3, 5, 4, 6, 5, 7, 6);
 
     impl CircuitExt<Fr> for HashCircuit<newParam<3, 2, 0>, 3, 2, 3> {
@@ -956,7 +956,8 @@ mod tests {
             ($i:expr, $j:expr) => {{
                 let message: [Fr; $i] = [Fr::random(OsRng); $i];
                 let output =
-                    poseidon::Hash::<_, newParam<$j, $i, 0>, ConstantLength<$i>, $j, $i>::init().hash(message);
+                    poseidon::Hash::<_, newParam<$j, $i, 0>, ConstantLength<$i>, $j, $i>::init()
+                        .hash(message);
                 let circuit = Halo2Circuit::new::<Pb>(
                     6,
                     HashCircuit::<newParam<$j, $i, 0>, $j, $i, $i> {
