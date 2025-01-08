@@ -713,42 +713,65 @@ mod tests {
         }
     }
 
-    impl CircuitExt<Fr> for PermuteCircuit<newParam<5, 4, 0>, 5, 4> {
-        fn instances(&self) -> Vec<Vec<Fr>> {
-            /*let mut expected_final_state = (0..7)
-            .map(|idx| Fq::from(idx as u64))
-            .collect::<Vec<_>>()
-            .try_into()
-            .unwrap();*/
-            Vec::new()
+    macro_rules! impl_circuit_ext {
+        ($($n:expr, $m:expr),*) => {
+            $(
+                impl CircuitExt<Fr> for PermuteCircuit<newParam<$n, $m, 0>, $n, $m> {
+                    fn instances(&self) -> Vec<Vec<Fr>> {
+                        /*let mut expected_final_state = (0..7)
+                        .map(|idx| Fq::from(idx as u64))
+                        .collect::<Vec<_>>()
+                        .try_into()
+                        .unwrap();*/
+                        Vec::new()
+                    }
+                }
+            )*
         }
     }
+    
+    impl_circuit_ext!(
+        2, 1,
+        3, 2,
+        4, 3,
+        5, 4,
+        6, 5,
+        7, 6
+    );
 
-    /*  #[test]
-    fn poseidon_permute() {
-        let k = 6;
-        let circuit = PermuteCircuit::<OrchardNullifier, 3, 2>(PhantomData);
-        let prover = MockProver::run::<_, true>(k, &circuit, vec![]).unwrap();
-        assert_eq!(prover.verify(), Ok(()))
-    }*/
     #[test]
-    fn poseidon_permute_new_param() {
+    fn poseidon_permute() {
         type Pb = HyperPlonk<Zeromorph<UnivariateKzg<Bn256>>>;
-        let circuit =
-            Halo2Circuit::new::<Pb>(6, PermuteCircuit::<newParam<5, 4, 0>, 5, 4>(PhantomData));
-        let param = Pb::setup(&circuit.circuit_info().unwrap(), seeded_std_rng()).unwrap();
-        let (pp, vp) = Pb::preprocess(&param, &circuit.circuit_info().unwrap()).unwrap();
-        let proof = {
-            let mut transcript = Keccak256Transcript::new(());
-            Pb::prove(&pp, &circuit, &mut transcript, seeded_std_rng()).unwrap();
-            transcript.into_proof()
-        };
-        let result = {
-            let mut transcript = Keccak256Transcript::from_proof((), proof.as_slice());
-            Pb::verify(&vp, circuit.instances(), &mut transcript, seeded_std_rng())
-        };
-        assert_eq!(result, Ok(()))
-        //assert!(false)
+        macro_rules! test_poseidon_permute {
+            ($i:expr, $j:expr) => {
+                {
+                    let circuit = Halo2Circuit::new::<Pb>(6, PermuteCircuit::<newParam<$j, $i, 0>, $j, $i>(PhantomData));
+                    let param = Pb::setup(&circuit.circuit_info().unwrap(), seeded_std_rng()).unwrap();
+                    let (pp, vp) = Pb::preprocess(&param, &circuit.circuit_info().unwrap()).unwrap();
+                    let proof = {
+                        let mut transcript = Keccak256Transcript::new(());
+                        Pb::prove(&pp, &circuit, &mut transcript, seeded_std_rng()).unwrap();
+                        transcript.into_proof()
+                    };
+                    let result = {
+                        let mut transcript = Keccak256Transcript::from_proof((), proof.as_slice());
+                        Pb::verify(&vp, circuit.instances(), &mut transcript, seeded_std_rng())
+                    };
+                    assert_eq!(result, Ok(()))
+                }
+            };
+        }
+        for i in 2..7 {
+            match i {
+                1 => test_poseidon_permute!(1,2),
+                2 => test_poseidon_permute!(2,3),
+                3 => test_poseidon_permute!(3,4),
+                4 => test_poseidon_permute!(4,5),
+                5 => test_poseidon_permute!(5,6),
+                6 => test_poseidon_permute!(6,7),
+                _ => unreachable!(),
+            }
+        }
 
         /*let k =6;
         let circuit = PermuteCircuit::<newParam<7,6,0>, 7, 6>(PhantomData);
@@ -902,16 +925,31 @@ mod tests {
         }
     }
 
-    impl CircuitExt<Fr> for HashCircuit<newParam<5, 4, 0>, 5, 4, 4> {
-        fn instances(&self) -> Vec<Vec<Fr>> {
-            /*let mut expected_final_state = (0..7)
-            .map(|idx| Fq::from(idx as u64))
-            .collect::<Vec<_>>()
-            .try_into()
-            .unwrap();*/
-            Vec::new()
+    macro_rules! impl_circuit_ext {
+        ($($n:expr, $m:expr),*) => {
+            $(
+                impl CircuitExt<Fr> for HashCircuit<newParam<$n, $m, 0>, $n, $m, $m> {
+                    fn instances(&self) -> Vec<Vec<Fr>> {
+                        /*let mut expected_final_state = (0..7)
+                        .map(|idx| Fq::from(idx as u64))
+                        .collect::<Vec<_>>()
+                        .try_into()
+                        .unwrap();*/
+                        Vec::new()
+                    }
+                }
+            )*
         }
     }
+    
+    impl_circuit_ext!(
+        2, 1,
+        3, 2,
+        4, 3,
+        5, 4,
+        6, 5,
+        7, 6
+    );
 
     impl CircuitExt<Fr> for HashCircuit<newParam<3, 2, 0>, 3, 2, 3> {
         fn instances(&self) -> Vec<Vec<Fr>> {
@@ -926,35 +964,47 @@ mod tests {
 
     #[test]
     fn poseidon_hash() {
-        let message = [
-            Fr::random(OsRng),
-            Fr::random(OsRng),
-            Fr::random(OsRng),
-            Fr::random(OsRng),
-        ];
-        let output =
-            poseidon::Hash::<_, newParam<5, 4, 0>, ConstantLength<4>, 5, 4>::init().hash(message);
         type Pb = HyperPlonk<Zeromorph<UnivariateKzg<Bn256>>>;
-        let circuit = Halo2Circuit::new::<Pb>(
-            6,
-            HashCircuit::<newParam<5, 4, 0>, 5, 4, 4> {
-                message: Value::known(message),
-                output: Value::known(output),
-                _spec: PhantomData,
-            },
-        );
-        let param = Pb::setup(&circuit.circuit_info().unwrap(), seeded_std_rng()).unwrap();
-        let (pp, vp) = Pb::preprocess(&param, &circuit.circuit_info().unwrap()).unwrap();
-        let proof = {
-            let mut transcript = Keccak256Transcript::new(());
-            Pb::prove(&pp, &circuit, &mut transcript, seeded_std_rng()).unwrap();
-            transcript.into_proof()
-        };
-        let result = {
-            let mut transcript = Keccak256Transcript::from_proof((), proof.as_slice());
-            Pb::verify(&vp, circuit.instances(), &mut transcript, seeded_std_rng())
-        };
-        assert_eq!(result, Ok(()))
+        macro_rules! test_poseidon_hash {
+            ($i:expr, $j:expr) => {
+                {
+                    let message: [Fr; $i] = [Fr::random(OsRng); $i];
+                    let output =
+                        poseidon::Hash::<_, newParam<$j, $i, 0>, ConstantLength<$i>, $j, $i>::init().hash(message);
+                    let circuit = Halo2Circuit::new::<Pb>(
+                        6,
+                        HashCircuit::<newParam<$j, $i, 0>, $j, $i, $i> {
+                            message: Value::known(message),
+                            output: Value::known(output),
+                            _spec: PhantomData,
+                        },
+                    );
+                    let param = Pb::setup(&circuit.circuit_info().unwrap(), seeded_std_rng()).unwrap();
+                    let (pp, vp) = Pb::preprocess(&param, &circuit.circuit_info().unwrap()).unwrap();
+                    let proof = {
+                        let mut transcript = Keccak256Transcript::new(());
+                        Pb::prove(&pp, &circuit, &mut transcript, seeded_std_rng()).unwrap();
+                        transcript.into_proof()
+                    };
+                    let result = {
+                        let mut transcript = Keccak256Transcript::from_proof((), proof.as_slice());
+                        Pb::verify(&vp, circuit.instances(), &mut transcript, seeded_std_rng())
+                    };
+                    assert_eq!(result, Ok(()))
+                }
+            };
+        }
+        for i in 2..7 {
+            match i {
+                1 => test_poseidon_hash!(1,2),
+                2 => test_poseidon_hash!(2,3),
+                3 => test_poseidon_hash!(3,4),
+                4 => test_poseidon_hash!(4,5),
+                5 => test_poseidon_hash!(5,6),
+                6 => test_poseidon_hash!(6,7),
+                _ => unreachable!(),
+            }
+        }
     }
 
     // This test is ignored because there is an error that should be fixed. The error is on line 353 of this file, in the add_input function.
