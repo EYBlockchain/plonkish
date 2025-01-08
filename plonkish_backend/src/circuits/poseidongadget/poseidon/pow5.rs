@@ -350,6 +350,7 @@ impl<
                         )?,
                         _ => panic!("Input is not padded"),
                     };
+                    // TO DO: the Synthesis error in poseidon_hash_longer_input occurs here when i =1 (the input is padding)
                     constraint_var
                         .copy_advice(
                             || format!("load input_{i}"),
@@ -861,7 +862,6 @@ mod tests {
             mut layouter: impl Layouter<Fr>,
         ) -> Result<(), Error> {
             let chip = Pow5Chip::construct(config.clone());
-
             let message = layouter.assign_region(
                 || "load message",
                 |mut region| {
@@ -884,6 +884,7 @@ mod tests {
                 chip,
                 layouter.namespace(|| "init"),
             )?;
+            //TO DO: add_input called here leading to error in poseidon_hash_longer_input
             let output = hasher.hash(layouter.namespace(|| "hash"), message)?;
 
             layouter.assign_region(
@@ -902,6 +903,17 @@ mod tests {
     }
 
     impl CircuitExt<Fr> for HashCircuit<newParam<5, 4, 0>, 5, 4, 4> {
+        fn instances(&self) -> Vec<Vec<Fr>> {
+            /*let mut expected_final_state = (0..7)
+            .map(|idx| Fq::from(idx as u64))
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();*/
+            Vec::new()
+        }
+    }
+
+    impl CircuitExt<Fr> for HashCircuit<newParam<3, 2, 0>, 3, 2, 3> {
         fn instances(&self) -> Vec<Vec<Fr>> {
             /*let mut expected_final_state = (0..7)
             .map(|idx| Fq::from(idx as u64))
@@ -945,65 +957,37 @@ mod tests {
         assert_eq!(result, Ok(()))
     }
 
-    /*#[ignore]
-    #[test]
-    fn poseidon_hash_longer_input() {
-        let rng = OsRng;
-
-        let message = [Fp::random(rng), Fp::random(rng), Fp::random(rng)];
-        let output =
-            poseidon::Hash::<_, OrchardNullifier, ConstantLength<3>, 3, 2>::init().hash(message);
-
-        let k = 7;
-        let circuit = HashCircuit::<OrchardNullifier, 3, 2, 3> {
-            message: Value::known(message),
-            output: Value::known(output),
-            _spec: PhantomData,
-        };
-        let prover = MockProver::run::<_, true>(k, &circuit, vec![]).unwrap();
-        assert_eq!(prover.verify(), Ok(()))
-    }
-
+    // This test is ignored because there is an error that should be fixed. 
     #[ignore]
     #[test]
-    fn hash_test_vectors() {
-        for tv in crate::circuits::poseidongadget::poseidon::primitives::test_vectors::fp::hash() {
-            let message = [
-                pallas::Base::from_repr(tv.input[0]).unwrap(),
-                pallas::Base::from_repr(tv.input[1]).unwrap(),
-            ];
-            let output = poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init()
-                .hash(message);
-
-            let k = 6;
-            let circuit = HashCircuit::<OrchardNullifier, 3, 2, 2> {
+    fn poseidon_hash_longer_input() {
+        let message = [
+            Fr::random(OsRng),
+            Fr::random(OsRng),
+            Fr::random(OsRng),
+        ];
+        let output =
+            poseidon::Hash::<_, newParam<3, 2, 0>, ConstantLength<3>, 3, 2>::init().hash(message);
+        type Pb = HyperPlonk<Zeromorph<UnivariateKzg<Bn256>>>;
+        let circuit = Halo2Circuit::new::<Pb>(
+            7,
+            HashCircuit::<newParam<3, 2, 0>, 3, 2, 3> {
                 message: Value::known(message),
                 output: Value::known(output),
                 _spec: PhantomData,
-            };
-            let prover = MockProver::run::<_, true>(k, &circuit, vec![]).unwrap();
-            assert_eq!(prover.verify(), Ok(()));
-        }
-    }
-
-    #[cfg(feature = "test-dev-graph")]
-    #[test]
-    fn print_poseidon_chip() {
-        use plotters::prelude::*;
-
-        let root = BitMapBackend::new("poseidon-chip-layout.png", (1024, 768)).into_drawing_area();
-        root.fill(&WHITE).unwrap();
-        let root = root
-            .titled("Poseidon Chip Layout", ("sans-serif", 60))
-            .unwrap();
-
-        let circuit = HashCircuit::<OrchardNullifier, 3, 2, 2> {
-            message: Value::unknown(),
-            output: Value::unknown(),
-            _spec: PhantomData,
+            },
+        );
+        let param = Pb::setup(&circuit.circuit_info().unwrap(), seeded_std_rng()).unwrap();
+        let (pp, vp) = Pb::preprocess(&param, &circuit.circuit_info().unwrap()).unwrap();
+        let proof = {
+            let mut transcript = Keccak256Transcript::new(());
+            Pb::prove(&pp, &circuit, &mut transcript, seeded_std_rng()).unwrap();
+            transcript.into_proof()
         };
-        halo2_proofs::dev::CircuitLayout::default()
-            .render(6, &circuit, &root)
-            .unwrap();
-    }*/
+        let result = {
+            let mut transcript = Keccak256Transcript::from_proof((), proof.as_slice());
+            Pb::verify(&vp, circuit.instances(), &mut transcript, seeded_std_rng())
+        };
+        assert_eq!(result, Ok(()))
+    }
 }
