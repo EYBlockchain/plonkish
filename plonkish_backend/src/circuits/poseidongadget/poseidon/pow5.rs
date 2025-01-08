@@ -957,15 +957,11 @@ mod tests {
         assert_eq!(result, Ok(()))
     }
 
-    // This test is ignored because there is an error that should be fixed. 
+    // This test is ignored because there is an error that should be fixed. The error is on line 353 of this file, in the add_input function.
     #[ignore]
     #[test]
     fn poseidon_hash_longer_input() {
-        let message = [
-            Fr::random(OsRng),
-            Fr::random(OsRng),
-            Fr::random(OsRng),
-        ];
+        let message = [Fr::random(OsRng), Fr::random(OsRng), Fr::random(OsRng)];
         let output =
             poseidon::Hash::<_, newParam<3, 2, 0>, ConstantLength<3>, 3, 2>::init().hash(message);
         type Pb = HyperPlonk<Zeromorph<UnivariateKzg<Bn256>>>;
