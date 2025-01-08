@@ -381,24 +381,23 @@ impl<F: PrimeField, S: Spec<F, T, RATE>, const T: usize, const RATE: usize, cons
 
 #[cfg(test)]
 mod tests {
-    //use super::{permute, ConstantLength, Hash, Spec};
-    //use ff::PrimeField;
-    //use halo2_curves::pasta::pallas;
+    use super::{permute, ConstantLength, Hash, Spec, BN256param};
+    use ff::PrimeField;
+    use halo2_curves::bn256::Fr;
 
-    /*#[ignore]
     #[test]
-    fn orchard_spec_equivalence() {
-        let message = [pallas::Base::from(6), pallas::Base::from(42)];
+    fn bn256_spec_equivalence() {
+        let message = [Fr::from(6), Fr::from(42)];
 
-        let (round_constants, mds, _) = OrchardNullifier::constants();
+        let (round_constants, mds, _) = BN256param::<3,2,0>::constants();
 
-        let hasher = Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init();
+        let hasher = Hash::<_, BN256param<3, 2, 0>, ConstantLength<2>, 3, 2>::init();
         let result = hasher.hash(message);
 
         // The result should be equivalent to just directly applying the permutation and
         // taking the first state element as the output.
-        let mut state = [message[0], message[1], pallas::Base::from_u128(2 << 64)];
-        permute::<_, OrchardNullifier, 3, 2>(&mut state, &mds, &round_constants);
+        let mut state = [message[0], message[1], Fr::from_u128(2 << 64)];
+        permute::<_, BN256param<3, 2, 0>, 3, 2>(&mut state, &mds, &round_constants);
         assert_eq!(state[0], result);
-    }*/
+    }
 }
